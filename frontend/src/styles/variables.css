@@ -1,0 +1,86 @@
+:root {
+  /* ===== 品牌色阶 ===== */
+  --color-primary-1: #edf7f4;
+  --color-primary-2: #d0ebe5;
+  --color-primary-3: #a3d9cd;
+  --color-primary-4: #5bb99e;
+  --color-primary-5: #2d7a6a;
+  --color-primary-6: #24655a;
+  --color-primary-7: #1b504a;
+
+  /* ===== 功能色 ===== */
+  --color-danger-6: #EF4444;
+  --color-warning-6: #F59E0B;
+  --color-success-6: #10B981;
+  --color-info-6: #3B82F6;
+
+  /* ===== 中性色阶 ===== */
+  --gray-50: #F9FAFB;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB;
+  --gray-400: #9CA3AF;
+  --gray-500: #6B7280;
+  --gray-600: #4B5563;
+  --gray-700: #374151;
+  --gray-800: #1F2937;
+  --gray-900: #111827;
+
+  /* ===== 预警专用 ===== */
+  --alert-red-bg: #FEF2F2;
+  --alert-red-border: #FECACA;
+  --alert-red-text: #991B1B;
+  --alert-red-icon: #EF4444;
+
+  --alert-yellow-bg: #FFFBEB;
+  --alert-yellow-border: #FDE68A;
+  --alert-yellow-text: #92400E;
+  --alert-yellow-icon: #F59E0B;
+
+  --alert-green-bg: #ECFDF5;
+  --alert-green-border: #A7F3D0;
+  --alert-green-text: #065F46;
+  --alert-green-icon: #10B981;
+
+  --alert-blue-bg: #EFF6FF;
+  --alert-blue-border: #BFDBFE;
+  --alert-blue-text: #1E40AF;
+
+  /* ===== 语义文本色（对齐 Arco 命名）===== */
+  --color-text-1: var(--gray-900);
+  --color-text-2: var(--gray-600);
+  --color-text-3: var(--gray-500);
+  --color-text-4: var(--gray-300);
+
+  /* ===== 语义背景 / 边框 ===== */
+  --color-bg-1: var(--gray-100);
+  --color-bg-2: var(--gray-50);
+  --color-bg-white: #FFFFFF;
+  --color-border-1: var(--gray-200);
+
+  /* ===== 阴影层级 ===== */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.04);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -4px rgba(0,0,0,.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,.08), 0 8px 10px -6px rgba(0,0,0,.04);
+
+  /* ===== 语义阴影别名 ===== */
+  --shadow-card: var(--shadow-sm);
+  --shadow-modal: 0 8px 24px rgba(0,0,0,.12);
+
+  /* ===== 侧边栏 ===== */
+  --sidebar-bg: #0F1D19;
+  --sidebar-hover: rgba(255,255,255,.06);
+  --sidebar-active: rgba(255,255,255,.1);
+  --sidebar-accent: #34D399;
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 64px;
+
+  /* ===== 布局 ===== */
+  --topbar-height: 56px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}

@@ -1,0 +1,629 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// 租户与组织
+// ==========================================
+
+model Tenant {
+  id        BigInt   @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  code      String   @unique @db.VarChar(50)
+  district  String?  @db.VarChar(100)
+  city      String?  @db.VarChar(100)
+  status    Int      @default(1) @db.TinyInt
+  config    Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  grades          Grade[]
+  classes         Class[]
+  users           User[]
+  students        Student[]
+  assessmentPlans AssessmentPlan[]
+  assessmentTasks AssessmentTask[]
+  alerts          Alert[]
+  caseFiles            CaseFile[]
+  notifications        Notification[]
+  operationLogs        OperationLog[]
+  consultSchedules     ConsultSchedule[]
+  consultAppointments  ConsultAppointment[]
+  parentBindings       ParentStudentBinding[]
+  parentNotifications  ParentNotification[]
+  reportTasks          ReportTask[]
+  aiChatSessions       AiChatSession[]
+
+  @@map("tenants")
+}
+
+model Grade {
+  id        BigInt   @id @default(autoincrement())
+  tenantId  BigInt   @map("tenant_id")
+  name      String   @db.VarChar(20)
+  level     Int      @db.TinyInt
+  gradeNum  Int      @map("grade_num") @db.TinyInt
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  classes Class[]
+
+  @@index([tenantId])
+  @@map("grades")
+}
+
+model Class {
+  id        BigInt   @id @default(autoincrement())
+  tenantId  BigInt   @map("tenant_id")
+  gradeId   BigInt   @map("grade_id")
+  name      String   @db.VarChar(30)
+  classNum  Int      @map("class_num")
+  teacherId BigInt?  @map("teacher_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  grade    Grade     @relation(fields: [gradeId], references: [id])
+  teacher  User?     @relation("ClassTeacher", fields: [teacherId], references: [id])
+  students Student[]
+
+  @@index([tenantId, gradeId])
+  @@map("classes")
+}
+
+// ==========================================
+// 用户与权限
+// ==========================================
+
+model User {
+  id           BigInt    @id @default(autoincrement())
+  tenantId     BigInt    @map("tenant_id")
+  username     String    @unique @db.VarChar(50)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  realName     String    @map("real_name") @db.VarChar(50)
+  role         String    @db.VarChar(20)
+  phone        String?   @db.VarChar(20)
+  email        String?   @db.VarChar(100)
+  avatarUrl    String?   @map("avatar_url") @db.VarChar(500)
+  status       Int       @default(1) @db.TinyInt
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  student        Student?
+  managedClasses Class[]         @relation("ClassTeacher")
+  teacherClasses TeacherClass[]
+  createdPlans   AssessmentPlan[]
+  assignedAlerts Alert[]         @relation("AlertAssignee")
+  reportedAlerts Alert[]         @relation("AlertReporter")
+  alertLogs      AlertLog[]
+  casesCounseled CaseFile[]      @relation("CaseCounselor")
+  caseRecords       CaseRecord[]
+  notifications     Notification[]
+  operationLogs     OperationLog[]
+  consultSchedules              ConsultSchedule[]
+  consultAppointmentsAsCounselor ConsultAppointment[] @relation("ConsultApptCounselor")
+  parentNotificationsSent       ParentNotification[] @relation("ParentNotifCounselor")
+  reportTasks                   ReportTask[]
+
+  @@index([tenantId, role])
+  @@map("users")
+}
+
+model Student {
+  id            BigInt    @id @default(autoincrement())
+  tenantId      BigInt    @map("tenant_id")
+  userId        BigInt    @unique @map("user_id")
+  studentNo     String?   @map("student_no") @db.VarChar(30)
+  classId       BigInt    @map("class_id")
+  gender        Int?      @db.TinyInt
+  birthDate     DateTime? @map("birth_date") @db.Date
+  guardianName   String?   @map("guardian_name") @db.VarChar(50)
+  guardianPhone  String?   @map("guardian_phone") @db.VarChar(20)
+  guardian2Phone String?   @map("guardian2_phone") @db.VarChar(20)
+  specialFlag   Int       @default(0) @map("special_flag") @db.TinyInt
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  user            User             @relation(fields: [userId], references: [id])
+  class_          Class            @relation(fields: [classId], references: [id])
+  assessmentTasks AssessmentTask[]
+  alerts          Alert[]
+  caseFile             CaseFile?
+  consultAppointments  ConsultAppointment[]
+  parentBindings       ParentStudentBinding[]
+  parentNotifications  ParentNotification[]
+  aiChatSessions       AiChatSession[]
+
+  @@index([tenantId, classId])
+  @@map("students")
+}
+
+model TeacherClass {
+  id        BigInt @id @default(autoincrement())
+  teacherId BigInt @map("teacher_id")
+  classId   BigInt @map("class_id")
+  role      String @default("homeroom") @db.VarChar(20)
+
+  teacher User @relation(fields: [teacherId], references: [id])
+
+  @@unique([teacherId, classId])
+  @@map("teacher_classes")
+}
+
+// ==========================================
+// 题库与量表
+// ==========================================
+
+model ScaleCategory {
+  id          BigInt   @id @default(autoincrement())
+  name        String   @db.VarChar(50)
+  description String?  @db.Text
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  scales Scale[]
+
+  @@map("scale_categories")
+}
+
+model Scale {
+  id               BigInt   @id @default(autoincrement())
+  categoryId       BigInt   @map("category_id")
+  name             String   @db.VarChar(100)
+  shortName        String?  @map("short_name") @db.VarChar(30)
+  description      String?  @db.Text
+  instruction      String?  @db.Text
+  applicableLevels Json?    @map("applicable_levels")
+  minAge           Int?     @map("min_age")
+  maxAge           Int?     @map("max_age")
+  questionCount    Int      @default(0) @map("question_count")
+  estimatedMins    Int?     @map("estimated_mins")
+  scoringType      String   @default("total") @map("scoring_type") @db.VarChar(20)
+  scoringRule       Json?   @map("scoring_rule")
+  resultLevels     Json?    @map("result_levels")
+  alertRules       Json?    @map("alert_rules")
+  minIntervalDays  Int      @default(30) @map("min_interval_days")
+  isActive         Int      @default(1) @map("is_active") @db.TinyInt
+  isSystem         Int      @default(1) @map("is_system") @db.TinyInt
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  category        ScaleCategory    @relation(fields: [categoryId], references: [id])
+  questions       ScaleQuestion[]
+  assessmentTasks AssessmentTask[]
+  alerts          Alert[]
+
+  @@index([categoryId])
+  @@index([isActive])
+  @@map("scales")
+}
+
+model ScaleQuestion {
+  id           BigInt  @id @default(autoincrement())
+  scaleId      BigInt  @map("scale_id")
+  questionNo   Int     @map("question_no")
+  questionText String  @map("question_text") @db.Text
+  questionType String  @default("single") @map("question_type") @db.VarChar(20)
+  options      Json?
+  reverseScore Int     @default(0) @map("reverse_score") @db.TinyInt
+  subscaleKey  String? @map("subscale_key") @db.VarChar(50)
+  isRequired   Int     @default(1) @map("is_required") @db.TinyInt
+
+  scale Scale @relation(fields: [scaleId], references: [id])
+
+  @@unique([scaleId, questionNo])
+  @@index([scaleId])
+  @@map("scale_questions")
+}
+
+// ==========================================
+// 测评任务
+// ==========================================
+
+model AssessmentPlan {
+  id            BigInt   @id @default(autoincrement())
+  tenantId      BigInt   @map("tenant_id")
+  title         String   @db.VarChar(200)
+  description   String?  @db.Text
+  creatorId     BigInt   @map("creator_id")
+  scaleIds      Json     @map("scale_ids")
+  targetType    String   @map("target_type") @db.VarChar(20)
+  targetIds     Json?    @map("target_ids")
+  startTime     DateTime @map("start_time")
+  endTime       DateTime @map("end_time")
+  remindBefore  Int      @default(1) @map("remind_before")
+  status        String   @default("draft") @db.VarChar(20)
+  autoAlert     Int      @default(1) @map("auto_alert") @db.TinyInt
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant  Tenant           @relation(fields: [tenantId], references: [id])
+  creator User             @relation(fields: [creatorId], references: [id])
+  tasks   AssessmentTask[]
+
+  @@index([tenantId, status])
+  @@index([creatorId])
+  @@map("assessment_plans")
+}
+
+model AssessmentTask {
+  id             BigInt    @id @default(autoincrement())
+  tenantId       BigInt    @map("tenant_id")
+  planId         BigInt    @map("plan_id")
+  studentId      BigInt    @map("student_id")
+  scaleId        BigInt    @map("scale_id")
+  status         String    @default("pending") @db.VarChar(20)
+  startTime      DateTime? @map("start_time")
+  submitTime     DateTime? @map("submit_time")
+  answers        Json?
+  totalScore     Decimal?  @map("total_score") @db.Decimal(10, 2)
+  subscaleScores Json?     @map("subscale_scores")
+  resultLevel    String?   @map("result_level") @db.VarChar(20)
+  resultDetail   Json?     @map("result_detail")
+  alertTriggered Int       @default(0) @map("alert_triggered") @db.TinyInt
+
+  tenant  Tenant         @relation(fields: [tenantId], references: [id])
+  plan    AssessmentPlan @relation(fields: [planId], references: [id])
+  student Student        @relation(fields: [studentId], references: [id])
+  scale   Scale          @relation(fields: [scaleId], references: [id])
+  alerts  Alert[]
+
+  @@index([planId, studentId])
+  @@index([tenantId, studentId])
+  @@index([status])
+  @@map("assessment_tasks")
+}
+
+// ==========================================
+// 预警管理
+// ==========================================
+
+model Alert {
+  id             BigInt    @id @default(autoincrement())
+  tenantId       BigInt    @map("tenant_id")
+  taskId         BigInt?   @map("task_id")
+  studentId      BigInt    @map("student_id")
+  scaleId        BigInt?   @map("scale_id")
+  source         String    @default("assessment") @map("source") @db.VarChar(20)
+  reporterId     BigInt?   @map("reporter_id")
+  reportReason   String?   @map("report_reason") @db.Text
+  reportUrgency  String    @default("normal") @map("report_urgency") @db.VarChar(20)
+  reportEvidence String?   @map("report_evidence") @db.Text
+  alertLevel     String    @map("alert_level") @db.VarChar(10)
+  alertReason    String?   @map("alert_reason") @db.Text
+  triggerScore   Decimal?  @map("trigger_score") @db.Decimal(10, 2)
+  triggerRule    String?   @map("trigger_rule") @db.VarChar(200)
+  status         String    @default("pending") @db.VarChar(20)
+  assignedTo     BigInt?   @map("assigned_to")
+  notifyTime     DateTime? @map("notify_time")
+  processTime    DateTime? @map("process_time")
+  closeTime      DateTime? @map("close_time")
+  closeNote      String?   @map("close_note") @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id])
+  task     AssessmentTask? @relation(fields: [taskId], references: [id])
+  student  Student         @relation(fields: [studentId], references: [id])
+  scale    Scale?          @relation(fields: [scaleId], references: [id])
+  reporter User?           @relation("AlertReporter", fields: [reporterId], references: [id])
+  assignee User?           @relation("AlertAssignee", fields: [assignedTo], references: [id])
+  logs            AlertLog[]
+  aiChatSessions  AiChatSession[]
+
+  @@index([tenantId, status])
+  @@index([studentId])
+  @@index([alertLevel])
+  @@index([source], map: "idx_source")
+  @@index([reporterId], map: "idx_reporter")
+  @@map("alerts")
+}
+
+model AlertLog {
+  id         BigInt   @id @default(autoincrement())
+  alertId    BigInt   @map("alert_id")
+  operatorId BigInt   @map("operator_id")
+  action     String   @db.VarChar(20)
+  content    String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  alert    Alert @relation(fields: [alertId], references: [id])
+  operator User  @relation(fields: [operatorId], references: [id])
+
+  @@index([alertId])
+  @@map("alert_logs")
+}
+
+// ==========================================
+// 个案档案
+// ==========================================
+
+model CaseFile {
+  id          BigInt    @id @default(autoincrement())
+  tenantId    BigInt    @map("tenant_id")
+  studentId   BigInt    @unique @map("student_id")
+  counselorId BigInt?   @map("counselor_id")
+  openDate    DateTime? @map("open_date") @db.Date
+  status      String    @default("active") @db.VarChar(20)
+  priority    String    @default("normal") @db.VarChar(20)
+  summary     String?   @db.Text
+  closeDate   DateTime? @map("close_date") @db.Date
+  closeReason String?   @map("close_reason") @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant    Tenant       @relation(fields: [tenantId], references: [id])
+  student   Student      @relation(fields: [studentId], references: [id])
+  counselor User?        @relation("CaseCounselor", fields: [counselorId], references: [id])
+  records   CaseRecord[]
+
+  @@unique([tenantId, studentId])
+  @@index([counselorId])
+  @@map("case_files")
+}
+
+model CaseRecord {
+  id            BigInt   @id @default(autoincrement())
+  caseId        BigInt   @map("case_id")
+  operatorId    BigInt   @map("operator_id")
+  recordType    String   @map("record_type") @db.VarChar(20)
+  recordDate    DateTime @map("record_date")
+  content       String   @db.Text
+  nextPlan      String?  @map("next_plan") @db.Text
+  appointmentId BigInt?  @map("appointment_id")
+  consultType   String   @default("walk_in") @map("consult_type") @db.VarChar(20)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  caseFile    CaseFile             @relation(fields: [caseId], references: [id])
+  operator    User                 @relation(fields: [operatorId], references: [id])
+  appointment ConsultAppointment?  @relation(fields: [appointmentId], references: [id])
+
+  @@index([caseId])
+  @@index([appointmentId], map: "idx_case_records_appointment")
+  @@map("case_records")
+}
+
+// ==========================================
+// 咨询预约排班（gap-features 2.2 / 2.3）
+// ==========================================
+
+model ConsultSchedule {
+  id             BigInt    @id @default(autoincrement())
+  tenantId       BigInt    @map("tenant_id")
+  counselorId    BigInt    @map("counselor_id")
+  weekday        Int       @db.TinyInt
+  slotStart      String    @map("slot_start") @db.VarChar(10)
+  slotEnd        String    @map("slot_end") @db.VarChar(10)
+  maxSlots       Int       @map("max_slots")
+  location       String?   @db.VarChar(100)
+  effectiveFrom  DateTime? @map("effective_from") @db.Date
+  effectiveUntil DateTime? @map("effective_until") @db.Date
+  isActive       Int       @default(1) @map("is_active") @db.TinyInt
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant        Tenant               @relation(fields: [tenantId], references: [id])
+  counselor     User                 @relation(fields: [counselorId], references: [id])
+  appointments  ConsultAppointment[]
+
+  @@index([tenantId, counselorId])
+  @@map("consult_schedules")
+}
+
+model ConsultAppointment {
+  id              BigInt    @id @default(autoincrement())
+  tenantId        BigInt    @map("tenant_id")
+  scheduleId      BigInt    @map("schedule_id")
+  appointmentDate DateTime  @map("appointment_date") @db.Date
+  studentId       BigInt    @map("student_id")
+  counselorId     BigInt    @map("counselor_id")
+  status          String    @default("pending") @db.VarChar(20)
+  studentNote     String?   @map("student_note") @db.Text
+  cancelReason    String?   @map("cancel_reason") @db.VarChar(500)
+  completedAt     DateTime? @map("completed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant    Tenant         @relation(fields: [tenantId], references: [id])
+  schedule  ConsultSchedule @relation(fields: [scheduleId], references: [id])
+  student   Student        @relation(fields: [studentId], references: [id])
+  counselor User           @relation("ConsultApptCounselor", fields: [counselorId], references: [id])
+  records   CaseRecord[]
+
+  @@index([scheduleId, appointmentDate])
+  @@index([studentId])
+  @@index([tenantId, status])
+  @@map("consult_appointments")
+}
+
+// ==========================================
+// 自助调适内容（gap-features 3.2）
+// ==========================================
+
+model WellnessArticle {
+  id            BigInt   @id @default(autoincrement())
+  tenantId      BigInt?  @map("tenant_id")
+  title         String   @db.VarChar(200)
+  category      String   @db.VarChar(30)
+  categoryLabel String   @map("category_label") @db.VarChar(20)
+  content       String   @db.LongText
+  coverImage    String?  @map("cover_image") @db.VarChar(500)
+  readMins      Int      @default(5) @map("read_mins")
+  isPublished   Int      @default(1) @map("is_published") @db.TinyInt
+  viewCount     Int      @default(0) @map("view_count")
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([category, isPublished])
+  @@map("wellness_articles")
+}
+
+// ==========================================
+// 系统配置与通知
+// ==========================================
+
+model Notification {
+  id        BigInt   @id @default(autoincrement())
+  tenantId  BigInt   @map("tenant_id")
+  toUserId  BigInt   @map("to_user_id")
+  type      String   @db.VarChar(20)
+  title     String   @db.VarChar(200)
+  content   String?  @db.Text
+  refId     BigInt?  @map("ref_id")
+  isRead    Int      @default(0) @map("is_read") @db.TinyInt
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [toUserId], references: [id])
+
+  @@index([toUserId, isRead])
+  @@map("notifications")
+}
+
+model OperationLog {
+  id         BigInt   @id @default(autoincrement())
+  tenantId   BigInt?  @map("tenant_id")
+  userId     BigInt?  @map("user_id")
+  action     String   @db.VarChar(50)
+  resource   String?  @db.VarChar(50)
+  resourceId BigInt?  @map("resource_id")
+  ip         String?  @db.VarChar(50)
+  userAgent  String?  @map("user_agent") @db.VarChar(500)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("operation_logs")
+}
+
+// ==========================================
+// 家长端（gap-features 4.2）
+// ==========================================
+
+model ParentStudentBinding {
+  id          BigInt   @id @default(autoincrement())
+  tenantId    BigInt   @map("tenant_id")
+  phone       String   @db.VarChar(20)
+  studentId   BigInt   @map("student_id")
+  relation    String   @db.VarChar(20)
+  status      String   @default("verified") @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@unique([phone, studentId])
+  @@index([tenantId, studentId])
+  @@map("parent_student_bindings")
+}
+
+model ParentNotification {
+  id          BigInt   @id @default(autoincrement())
+  tenantId    BigInt   @map("tenant_id")
+  studentId   BigInt   @map("student_id")
+  counselorId BigInt   @map("counselor_id")
+  title       String   @db.VarChar(200)
+  content     String   @db.Text
+  notifyType  String   @map("notify_type") @db.VarChar(30)
+  isRead      Int      @default(0) @map("is_read") @db.TinyInt
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+  student   Student @relation(fields: [studentId], references: [id])
+  counselor User    @relation("ParentNotifCounselor", fields: [counselorId], references: [id])
+
+  @@index([tenantId, studentId, isRead])
+  @@map("parent_notifications")
+}
+
+// ==========================================
+// 数据报告（gap-features 5.2）
+// ==========================================
+
+model ReportTask {
+  id          BigInt    @id @default(autoincrement())
+  tenantId    BigInt    @map("tenant_id")
+  creatorId   BigInt    @map("creator_id")
+  reportType  String    @map("report_type") @db.VarChar(30)
+  refId       BigInt?   @map("ref_id")
+  planId      BigInt?   @map("plan_id")
+  params      Json?
+  status      String    @default("pending") @db.VarChar(20)
+  fileUrl     String?   @map("file_url") @db.VarChar(500)
+  fileSize    Int?      @map("file_size")
+  errorMsg    String?   @map("error_msg") @db.Text
+  generatedAt DateTime? @map("generated_at")
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  tenant  Tenant @relation(fields: [tenantId], references: [id])
+  creator User   @relation(fields: [creatorId], references: [id])
+
+  @@index([tenantId, creatorId])
+  @@index([status])
+  @@map("report_tasks")
+}
+
+// ==========================================
+// AI 倾诉会话（gap-features 模块三）
+// ==========================================
+
+model AiChatSession {
+  id             BigInt    @id @default(autoincrement())
+  tenantId       BigInt    @map("tenant_id")
+  studentId      BigInt    @map("student_id")
+  startedAt      DateTime  @map("started_at")
+  endedAt        DateTime? @map("ended_at")
+  /** 1=进行中 0=已结束 */
+  isActive       Int       @default(1) @map("is_active") @db.TinyInt
+  /** 取首条用户消息前 20 字 */
+  title          String    @default("") @db.VarChar(100)
+  lastMessageAt  DateTime? @map("last_message_at")
+  messageCount   Int       @default(0) @map("message_count")
+  riskDetected   Int       @default(0) @map("risk_detected") @db.TinyInt
+  riskLevel      AiChatRiskLevel @default(none) @map("risk_level")
+  alertTriggered Int       @default(0) @map("alert_triggered") @db.TinyInt
+  alertId        BigInt?   @map("alert_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  tenant   Tenant           @relation(fields: [tenantId], references: [id])
+  student  Student          @relation(fields: [studentId], references: [id])
+  alert    Alert?           @relation(fields: [alertId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  messages AiChatMessage[]
+
+  @@index([tenantId, studentId])
+  @@index([alertId])
+  @@map("ai_chat_sessions")
+}
+
+model AiChatMessage {
+  id        BigInt           @id @default(autoincrement())
+  sessionId BigInt           @map("session_id")
+  role      AiChatMessageRole
+  content   String           @db.Text
+  riskScore Decimal?         @map("risk_score") @db.Decimal(3, 2)
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  session AiChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([sessionId])
+  @@map("ai_chat_messages")
+}
+
+enum AiChatRiskLevel {
+  none
+  low
+  medium
+  high
+}
+
+enum AiChatMessageRole {
+  user
+  assistant
+}

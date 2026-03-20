@@ -1,0 +1,39 @@
+:root {
+  --h5-primary: #3d8b7a;
+  --h5-bg: #f7f5f0;
+  --h5-surface: #ffffff;
+  --h5-text: #1b1c19;
+  --h5-subtext: #6f7975;
+  --h5-border: #e4e2dd;
+  --h5-shadow: 0 6px 18px rgba(63, 73, 70, 0.08);
+  --h5-radius-card: 20px;
+  --h5-radius-pill: 999px;
+}
+
+.h5-page {
+  max-width: 420px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--h5-bg);
+  color: var(--h5-text);
+}
+
+.h5-header h2,
+.h5-nav-bar .title {
+  color: var(--h5-text);
+}
+
+.h5-header p {
+  color: var(--h5-subtext);
+}
+
+.h5-card {
+  background: var(--h5-surface);
+  border: 1px solid var(--h5-border);
+  border-radius: var(--h5-radius-card);
+  box-shadow: var(--h5-shadow);
+}
+
+.h5-primary-btn {
+  border-radius: var(--h5-radius-pill);
+}

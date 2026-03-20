@@ -1,0 +1,192 @@
+@import './variables.css';
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 14px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+               "Noto Sans SC", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--gray-100, #F3F4F6);
+  color: var(--gray-900, #111827);
+  line-height: 1.6;
+}
+
+/* ===== 数字字体 ===== */
+.numeric {
+  font-family: "DIN Alternate", "Helvetica Neue", "Arial Narrow", sans-serif;
+}
+
+/* ===== Arco Design 全局主题覆盖 ===== */
+.arco-btn-primary,
+.arco-btn-primary:not(.arco-btn-disabled) {
+  background-color: var(--color-primary-5);
+  border-color: var(--color-primary-5);
+}
+.arco-btn-primary:hover {
+  background-color: var(--color-primary-6);
+  border-color: var(--color-primary-6);
+}
+.arco-btn-primary:active {
+  background-color: var(--color-primary-7);
+  border-color: var(--color-primary-7);
+}
+
+/* Link 颜色 */
+.arco-link {
+  color: var(--color-primary-5) !important;
+}
+
+/* ===== 页面容器 ===== */
+.page-wrap {
+  min-height: 100%;
+  padding: 28px;
+  background: var(--color-bg-1);
+  color: var(--color-text-1);
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+/* ===== 页面头部 ===== */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-1);
+  line-height: 1.3;
+}
+
+/* ===== 统计卡片 ===== */
+.stat-card {
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-1);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.stat-card .stat-label {
+  font-size: 12px;
+  color: var(--color-text-3);
+  margin-bottom: 8px;
+}
+
+.stat-card .stat-value {
+  font-family: "DIN Alternate", "Helvetica Neue", "Arial Narrow", sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-1);
+  line-height: 1;
+}
+
+.stat-card .stat-unit {
+  font-size: 14px;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+/* ===== 筛选栏 ===== */
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-1);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+/* ===== 卡片通用 ===== */
+.card {
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-1);
+  border-radius: var(--radius-lg, 12px);
+  padding: 20px;
+}
+
+.card-hoverable {
+  transition: box-shadow 0.2s, transform 0.2s;
+  cursor: pointer;
+}
+.card-hoverable:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* ===== 区块标题 ===== */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-1);
+}
+
+/* ===== 辅助文本 ===== */
+.text-muted {
+  color: var(--color-text-4);
+}
+
+.cell-sub {
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+
+/* ===== 批量操作栏 ===== */
+.batch-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-1);
+  border-radius: var(--radius-md);
+  padding: 12px 24px;
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 100;
+}
+
+/* ===== 滚动条 ===== */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ===== 路由过渡（备用）===== */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.15s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* ===== 移动端基础 ===== */
+@media (max-width: 767px) {
+  body {
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+}
