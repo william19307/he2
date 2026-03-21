@@ -1,6 +1,19 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+/** 开发环境：无登录截取 KPI hover 样式用 */
+const devRoutes = import.meta.env.DEV
+  ? [
+      {
+        path: '/dev/kpi-screenshot',
+        name: 'DevKpiScreenshot',
+        component: () => import('../views/dashboard/DashboardKpiScreenshot.vue'),
+        meta: { title: 'KPI截图', public: true },
+      },
+    ]
+  : []
+
 const routes = [
+  ...devRoutes,
   {
     path: '/login',
     name: 'Login',
@@ -29,6 +42,18 @@ const routes = [
         name: 'AlertList',
         component: () => import('../views/alerts/AlertList.vue'),
         meta: { title: '预警列表', icon: 'icon-exclamation-circle' }
+      },
+      {
+        path: 'cases',
+        name: 'CaseList',
+        component: () => import('../views/cases/CaseList.vue'),
+        meta: { title: '个案管理', icon: 'icon-user' }
+      },
+      {
+        path: 'cases/:id',
+        name: 'CaseDetail',
+        component: () => import('../views/cases/CaseDetail.vue'),
+        meta: { title: '个案详情' }
       },
       {
         path: 'alerts/:id',

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>个案详情（界面示意）</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #1d2129; padding: 24px; max-width: 720px; }
+    .back { font-size: 14px; color: #165dff; margin-bottom: 8px; }
+    h1 { font-size: 18px; margin: 0 0 20px; font-weight: 600; }
+    .block { background: #fff; border-radius: 8px; border: 1px solid #e5e6eb; padding: 16px 20px; margin-bottom: 16px; }
+    .block h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 13px; }
+    .grid div span { color: #86909c; display: block; margin-bottom: 4px; font-size: 12px; }
+    .tag-red { display: inline-block; padding: 2px 8px; background: #ffece8; color: #f53f3f; border-radius: 4px; font-size: 12px; }
+    .timeline { border-left: 2px solid #e5e6eb; margin-left: 8px; padding-left: 20px; }
+    .item { position: relative; margin-bottom: 24px; }
+    .item::before { content: ''; position: absolute; left: -25px; top: 4px; width: 8px; height: 8px; border-radius: 50%; background: #165dff; }
+    .t-head { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+    .t-sub { font-size: 12px; color: #86909c; margin-bottom: 8px; }
+    .emotion { font-size: 13px; margin-bottom: 8px; }
+    .stars { color: #ffb400; letter-spacing: 2px; }
+    .content { font-size: 13px; line-height: 1.6; color: #4e5969; white-space: pre-wrap; }
+    .actions { display: flex; gap: 12px; margin-top: 8px; }
+    .btn-p { padding: 8px 20px; background: #165dff; color: #fff; border-radius: 6px; font-size: 14px; border: none; }
+    .btn-d { padding: 8px 20px; background: #fff; color: #f53f3f; border: 1px solid #f53f3f; border-radius: 6px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="back">← 返回</div>
+  <h1>个案详情</h1>
+  <div class="block">
+    <h2>学生信息</h2>
+    <div class="grid">
+      <div><span>姓名</span>李梦瑶</div>
+      <div><span>班级</span>初二3班</div>
+      <div><span>学号</span>20230301015</div>
+      <div><span>预警等级</span><span class="tag-red">红色预警</span></div>
+      <div><span>负责老师</span>张晓慧</div>
+      <div><span>状态</span>进行中</div>
+    </div>
+    <p style="margin:12px 0 0;font-size:13px;color:#4e5969;">摘要：抑郁情绪个案，家长已知情并配合。</p>
+  </div>
+  <div class="block">
+    <h2>干预进展</h2>
+    <div class="timeline">
+      <div class="item">
+        <div class="t-head">2025-03-18 09:15:00 · 张晓慧 · 会谈</div>
+        <div class="emotion">情绪评级：<span class="stars">★★★★☆</span> 4/5</div>
+        <div class="content">本次跟进睡眠与情绪量表变化，学生表示压力来源主要为学业竞争，约定下周继续会谈。</div>
+      </div>
+      <div class="item">
+        <div class="t-head">2025-03-10 14:30:00 · 张晓慧 · 咨询</div>
+        <div class="emotion">情绪评级：<span class="stars">★★★☆☆</span> 3/5</div>
+        <div class="content">建立信任关系，完成初次评估与目标协商。</div>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn-p">添加跟进记录</button>
+    <button class="btn-d">结案</button>
+  </div>
+</body>
+</html>

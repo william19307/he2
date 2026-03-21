@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>侧栏子菜单展开/收起示意</title>
+  <style>
+    body { margin: 0; padding: 20px; font-family: system-ui; background: #111; color: #eee; display: flex; gap: 24px; flex-wrap: wrap; }
+    h1 { width: 100%; font-size: 16px; margin: 0 0 12px; color: #9ca3af; }
+    .col { background: #0F1D19; border-radius: 12px; padding: 16px; width: 220px; }
+    .col h2 { font-size: 12px; color: #6b7280; margin: 0 0 12px; text-transform: uppercase; letter-spacing: .08em; }
+    .parent { display: flex; align-items: center; padding: 8px 12px; border-radius: 7px; color: rgba(255,255,255,.85); font-size: 14px; cursor: default; }
+    .parent.open { color: #fff; }
+    .chev { margin-left: auto; opacity: .5; transition: transform .2s; }
+    .parent.open .chev { transform: rotate(180deg); }
+    .children { padding: 4px 0 4px 28px; font-size: 13px; color: rgba(255,255,255,.55); }
+    .children a { display: block; padding: 6px 0; }
+    /* 收起：子菜单 display:none（与 AppSidebar 修复一致） */
+    .col--collapsed .children { display: none; }
+    .note { font-size: 11px; color: #6b7280; margin-top: 12px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <h1>修复说明：父级无 .nav-item--open 时 .nav-children 设为 display:none，点击父项可收起子菜单。</h1>
+  <div class="col">
+    <h2>展开（nav-item--open）</h2>
+    <div class="parent open">
+      学生管理 <span class="chev">▼</span>
+    </div>
+    <div class="children">
+      <a>全部学生</a>
+      <a>个案管理</a>
+    </div>
+    <p class="note">子菜单可见</p>
+  </div>
+  <div class="col col--collapsed">
+    <h2>收起（无 open）</h2>
+    <div class="parent">
+      学生管理 <span class="chev">▼</span>
+    </div>
+    <div class="children">
+      <a>全部学生</a>
+      <a>个案管理</a>
+    </div>
+    <p class="note">子菜单已隐藏（与左侧对比）</p>
+  </div>
+</body>
+</html>

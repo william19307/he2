@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>预警列表（无行复选框示意）</title>
+  <style>
+    body { margin: 0; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #1d2129; }
+    h2 { margin: 0 0 20px; font-size: 20px; font-weight: 600; }
+    .hint { font-size: 13px; color: #86909c; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.04); font-size: 13px; }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #e5e6eb; }
+    th { background: #f7f8fa; font-weight: 600; color: #4e5969; }
+    tr:last-child td { border-bottom: none; }
+    .sub { font-size: 12px; color: #86909c; }
+    .tag-red { color: #f53f3f; background: #ffece8; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+    .tag-yel { color: #ff7d00; background: #fff7e8; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h2>预警管理</h2>
+  <p class="hint">表格第一列直接为「学生姓名」，无复选框列、无表头全选。</p>
+  <table>
+    <thead>
+      <tr>
+        <th>学生姓名</th>
+        <th>预警等级</th>
+        <th>触发量表</th>
+        <th>触发时间</th>
+        <th>处置状态</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>李梦瑶<div class="sub">初二3班</div></td>
+        <td><span class="tag-red">红色预警</span></td>
+        <td>PHQ-9 <span class="sub">得分:18/27</span></td>
+        <td>2025-03-17 10:22:00</td>
+        <td>待处理</td>
+        <td>处理 · 详情</td>
+      </tr>
+      <tr>
+        <td>陈小雨<div class="sub">初一5班</div></td>
+        <td><span class="tag-yel">黄色预警</span></td>
+        <td>GAD-7</td>
+        <td>2025-03-16 15:08:00</td>
+        <td>处理中</td>
+        <td>详情</td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>

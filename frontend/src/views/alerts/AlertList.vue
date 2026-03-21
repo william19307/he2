@@ -86,7 +86,6 @@
       v-if="!isMobile"
       :data="list"
       :loading="loading"
-      :row-selection="rowSelection"
       :scroll="{ x: 1500 }"
       :pagination="pagination"
       :row-class="rowClass"
@@ -214,16 +213,6 @@
       <div class="ma-total">共 {{ total }} 条</div>
     </div>
 
-    <transition name="fade">
-      <div v-if="selectedRowKeys.length > 0" class="batch-bar">
-        <span>已选 {{ selectedRowKeys.length }} 条</span>
-        <a-divider direction="vertical" />
-        <a-button size="small" disabled>批量指派</a-button>
-        <a-button size="small" disabled>批量关闭</a-button>
-        <a-button size="small" disabled>导出选中</a-button>
-        <a-button size="small" type="text" @click="selectedRowKeys = []">取消选择</a-button>
-      </div>
-    </transition>
   </div>
 </template>
 
@@ -244,7 +233,6 @@ const scales = ref([])
 const counselors = ref([])
 const grades = ref([])
 const flatClasses = ref([])
-const selectedRowKeys = ref([])
 const isMobile = ref(false)
 const showFilters = ref(false)
 
@@ -277,15 +265,6 @@ const pagination = computed(() => ({
   showPageSize: true,
   pageSizeOptions: [10, 20, 50, 100],
 }))
-
-const rowSelection = reactive({
-  type: 'checkbox',
-  showCheckedAll: true,
-  selectedRowKeys,
-  onChange: (keys) => {
-    selectedRowKeys.value = keys
-  },
-})
 
 function rowClass(record) {
   return record.sla_overdue ? 'sla-overdue-row' : ''
@@ -321,7 +300,6 @@ function buildParams() {
 
 async function loadList() {
   loading.value = true
-  selectedRowKeys.value = []
   try {
     const res = await getAlerts(buildParams())
     const d = res.data || {}
@@ -407,14 +385,43 @@ async function loadClassTree() {
   }
 }
 
+/** 支持 KPI 跳转：/alerts?level=red&status=pending、/alerts?level=yellow */
+function applyAlertFiltersFromRoute() {
+  if (route.name !== 'AlertList') return
+  const q = route.query
+  const level = q.level ?? q.alert_level
+  if (level === 'red' || level === 'yellow') {
+    filters.alert_level = level
+  } else {
+    filters.alert_level = undefined
+  }
+  const st = q.status
+  if (st === 'pending' || st === 'processing' || st === 'closed' || st === 'revoked') {
+    filters.status = st
+  } else {
+    filters.status = undefined
+  }
+}
+
 // 人工上报后从 Layout 跳转 /alerts?_t=xxx 触发刷新
 watch(() => route.query._t, (val) => { if (val) loadList() })
+
+watch(
+  () => [route.name, route.query.level, route.query.alert_level, route.query.status],
+  () => {
+    if (route.name !== 'AlertList') return
+    applyAlertFiltersFromRoute()
+    page.value = 1
+    loadList()
+  }
+)
 
 onMounted(async () => {
   const mql = window.matchMedia('(max-width: 767px)')
   isMobile.value = mql.matches
   mql.addEventListener('change', (e) => { isMobile.value = e.matches })
   await Promise.all([loadScales(), loadCounselors(), loadClassTree()])
+  applyAlertFiltersFromRoute()
   loadList()
 })
 </script>

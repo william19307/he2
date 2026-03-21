@@ -29,8 +29,23 @@
     <!-- KPI 卡片行 -->
     <a-spin :loading="loadingOverview" class="kpi-row-spin">
       <div class="kpi-row">
-        <!-- 本周测评 -->
-        <div class="kpi-card kpi-card--green">
+        <!-- 本周测评 → 测评计划列表 -->
+        <router-link
+          class="kpi-card kpi-card--green kpi-card--link"
+          :class="{ 'kpi-card--force-hover': kpiHoverDemo }"
+          to="/plans"
+        >
+          <span class="kpi-card-arrow" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M5 9l4-4M6 5h3v3"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
           <div class="kpi-card-top">
             <span class="kpi-card-label">本周测评人次</span>
             <span class="kpi-badge kpi-badge--green"
@@ -54,10 +69,25 @@
               stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"
             />
           </svg>
-        </div>
+        </router-link>
 
-        <!-- 红色预警 -->
-        <div class="kpi-card kpi-card--red">
+        <!-- 红色预警 → 红色待处理 -->
+        <router-link
+          class="kpi-card kpi-card--red kpi-card--link"
+          :class="{ 'kpi-card--force-hover': kpiHoverDemo }"
+          :to="{ path: '/alerts', query: { level: 'red', status: 'pending' } }"
+        >
+          <span class="kpi-card-arrow" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M5 9l4-4M6 5h3v3"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
           <div class="kpi-card-top">
             <span class="kpi-card-label">红色预警</span>
             <span class="kpi-badge kpi-badge--red-pill">待处理</span>
@@ -71,10 +101,25 @@
               stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"
             />
           </svg>
-        </div>
+        </router-link>
 
         <!-- 黄色预警 -->
-        <div class="kpi-card kpi-card--amber">
+        <router-link
+          class="kpi-card kpi-card--amber kpi-card--link"
+          :class="{ 'kpi-card--force-hover': kpiHoverDemo }"
+          :to="{ path: '/alerts', query: { level: 'yellow' } }"
+        >
+          <span class="kpi-card-arrow" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M5 9l4-4M6 5h3v3"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
           <div class="kpi-card-top">
             <span class="kpi-card-label">黄色预警</span>
             <span class="kpi-badge kpi-badge--amber-pill">跟进中</span>
@@ -88,10 +133,25 @@
               stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"
             />
           </svg>
-        </div>
+        </router-link>
 
-        <!-- 个案 -->
-        <div class="kpi-card kpi-card--blue">
+        <!-- 在跟进个案 → 个案管理 -->
+        <router-link
+          class="kpi-card kpi-card--blue kpi-card--link"
+          :class="{ 'kpi-card--force-hover': kpiHoverDemo }"
+          to="/cases"
+        >
+          <span class="kpi-card-arrow" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M5 9l4-4M6 5h3v3"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
           <div class="kpi-card-top">
             <span class="kpi-card-label">在跟进个案</span>
             <span class="kpi-badge kpi-badge--blue-pill">+{{ overview.case_new_this_week }} 本周</span>
@@ -105,7 +165,7 @@
               stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"
             />
           </svg>
-        </div>
+        </router-link>
       </div>
     </a-spin>
 
@@ -298,13 +358,17 @@
 
 <script setup>
 import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { todoItems } from '@/mock/data'
 import { useAuthStore } from '@/stores/auth'
 import * as dashboardApi from '@/api/dashboard'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
+
+/** 截图用：访问 /dashboard?kpiHover=1 时展示 KPI 卡片 hover 态 */
+const kpiHoverDemo = computed(() => route.query.kpiHover === '1')
 
 function todoDotColor(item) {
   if (item.type === 'alert' || item.priority === 'high') return 'red'
@@ -664,9 +728,40 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   overflow: hidden;
   transition: box-shadow 0.2s, transform 0.2s;
 }
-.kpi-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,.07);
-  transform: translateY(-1px);
+
+/* 可点击 KPI：手型、上移、右上角箭头 */
+.kpi-card--link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.kpi-card--link:visited {
+  color: inherit;
+}
+.kpi-card--link:hover,
+.kpi-card--link.kpi-card--force-hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+  transform: translateY(-2px);
+}
+.kpi-card--link .kpi-card-top {
+  padding-right: 22px;
+}
+.kpi-card-arrow {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+  z-index: 2;
+  color: var(--c3);
+  opacity: 0.5;
+  line-height: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.kpi-card--link:hover .kpi-card-arrow,
+.kpi-card--link.kpi-card--force-hover .kpi-card-arrow {
+  opacity: 0.9;
 }
 
 /* 左侧色条 */

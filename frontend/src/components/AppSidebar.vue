@@ -27,7 +27,7 @@
         </a>
 
         <div class="nav-item nav-item--parent" :class="{ 'nav-item--open': openKeys.includes('alerts') }">
-          <div class="nav-item-trigger" @click="toggleGroup('alerts')">
+          <div class="nav-item-trigger" @click.stop="toggleGroup('alerts')">
             <span class="nav-item-icon">
               <IconExclamationCircle />
               <span v-if="appStore.sidebarCollapsed" class="nav-dot nav-dot--red" />
@@ -43,7 +43,11 @@
             </span>
             <span v-if="appStore.sidebarCollapsed" class="nav-tooltip">预警管理</span>
           </div>
-          <div v-if="!appStore.sidebarCollapsed" class="nav-children">
+          <div
+            v-if="!appStore.sidebarCollapsed"
+            v-show="openKeys.includes('alerts')"
+            class="nav-children"
+          >
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/alerts' }" @click="go('/alerts')">
               预警列表
             </a>
@@ -51,7 +55,7 @@
         </div>
 
         <div class="nav-item nav-item--parent" :class="{ 'nav-item--open': openKeys.includes('students') }">
-          <div class="nav-item-trigger" @click="toggleGroup('students')">
+          <div class="nav-item-trigger" @click.stop="toggleGroup('students')">
             <span class="nav-item-icon"><IconUserGroup /></span>
             <span v-if="!appStore.sidebarCollapsed" class="nav-item-text">学生管理</span>
             <span v-if="!appStore.sidebarCollapsed" class="nav-chevron">
@@ -61,9 +65,20 @@
             </span>
             <span v-if="appStore.sidebarCollapsed" class="nav-tooltip">学生管理</span>
           </div>
-          <div v-if="!appStore.sidebarCollapsed" class="nav-children">
+          <div
+            v-if="!appStore.sidebarCollapsed"
+            v-show="openKeys.includes('students')"
+            class="nav-children"
+          >
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/students' }" @click="go('/students')">
               全部学生
+            </a>
+            <a
+              class="nav-child"
+              :class="{ 'nav-child--active': route.path === '/cases' || route.path.startsWith('/cases/') }"
+              @click="go('/cases')"
+            >
+              个案管理
             </a>
           </div>
         </div>
@@ -74,7 +89,7 @@
         <div v-if="!appStore.sidebarCollapsed" class="nav-group-label">测评与分析</div>
 
         <div class="nav-item nav-item--parent" :class="{ 'nav-item--open': openKeys.includes('assessment') }">
-          <div class="nav-item-trigger" @click="toggleGroup('assessment')">
+          <div class="nav-item-trigger" @click.stop="toggleGroup('assessment')">
             <span class="nav-item-icon"><IconFile /></span>
             <span v-if="!appStore.sidebarCollapsed" class="nav-item-text">测评管理</span>
             <span v-if="!appStore.sidebarCollapsed" class="nav-chevron">
@@ -84,7 +99,11 @@
             </span>
             <span v-if="appStore.sidebarCollapsed" class="nav-tooltip">测评管理</span>
           </div>
-          <div v-if="!appStore.sidebarCollapsed" class="nav-children">
+          <div
+            v-if="!appStore.sidebarCollapsed"
+            v-show="openKeys.includes('assessment')"
+            class="nav-children"
+          >
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/plans' }" @click="go('/plans')">测评计划</a>
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/plans/create' }" @click="go('/plans/create')">新建计划</a>
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/scales' }" @click="go('/scales')">量表题库</a>
@@ -92,7 +111,7 @@
         </div>
 
         <div class="nav-item nav-item--parent" :class="{ 'nav-item--open': openKeys.includes('analytics') }">
-          <div class="nav-item-trigger" @click="toggleGroup('analytics')">
+          <div class="nav-item-trigger" @click.stop="toggleGroup('analytics')">
             <span class="nav-item-icon"><IconBarChart /></span>
             <span v-if="!appStore.sidebarCollapsed" class="nav-item-text">数据分析</span>
             <span v-if="!appStore.sidebarCollapsed" class="nav-chevron">
@@ -102,7 +121,11 @@
             </span>
             <span v-if="appStore.sidebarCollapsed" class="nav-tooltip">数据分析</span>
           </div>
-          <div v-if="!appStore.sidebarCollapsed" class="nav-children">
+          <div
+            v-if="!appStore.sidebarCollapsed"
+            v-show="openKeys.includes('analytics')"
+            class="nav-children"
+          >
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/dashboard/class' }" @click="go('/dashboard/class')">班级看板</a>
           </div>
         </div>
@@ -113,7 +136,7 @@
         <div v-if="!appStore.sidebarCollapsed" class="nav-group-label">咨询预约</div>
 
         <div class="nav-item nav-item--parent" :class="{ 'nav-item--open': openKeys.includes('consult') }">
-          <div class="nav-item-trigger" @click="toggleGroup('consult')">
+          <div class="nav-item-trigger" @click.stop="toggleGroup('consult')">
             <span class="nav-item-icon"><IconHeart /></span>
             <span v-if="!appStore.sidebarCollapsed" class="nav-item-text">咨询管理</span>
             <span v-if="!appStore.sidebarCollapsed" class="nav-chevron">
@@ -123,7 +146,11 @@
             </span>
             <span v-if="appStore.sidebarCollapsed" class="nav-tooltip">咨询管理</span>
           </div>
-          <div v-if="!appStore.sidebarCollapsed" class="nav-children">
+          <div
+            v-if="!appStore.sidebarCollapsed"
+            v-show="openKeys.includes('consult')"
+            class="nav-children"
+          >
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/consult/schedule' }" @click="go('/consult/schedule')">咨询排班</a>
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/consult/appointments' }" @click="go('/consult/appointments')">预约管理</a>
           </div>
@@ -135,7 +162,7 @@
         <div v-if="!appStore.sidebarCollapsed" class="nav-group-label">系统</div>
 
         <div class="nav-item nav-item--parent" :class="{ 'nav-item--open': openKeys.includes('admin') }">
-          <div class="nav-item-trigger" @click="toggleGroup('admin')">
+          <div class="nav-item-trigger" @click.stop="toggleGroup('admin')">
             <span class="nav-item-icon"><IconSettings /></span>
             <span v-if="!appStore.sidebarCollapsed" class="nav-item-text">系统管理</span>
             <span v-if="!appStore.sidebarCollapsed" class="nav-chevron">
@@ -145,7 +172,11 @@
             </span>
             <span v-if="appStore.sidebarCollapsed" class="nav-tooltip">系统管理</span>
           </div>
-          <div v-if="!appStore.sidebarCollapsed" class="nav-children">
+          <div
+            v-if="!appStore.sidebarCollapsed"
+            v-show="openKeys.includes('admin')"
+            class="nav-children"
+          >
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/admin/users' }" @click="go('/admin/users')">用户列表</a>
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/admin/students/import' }" @click="go('/admin/students/import')">导入学生</a>
           </div>
@@ -169,7 +200,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
@@ -199,7 +230,7 @@ function getDefaultOpenKeys() {
   const p = route.path
   const keys = []
   if (p.startsWith('/alerts')) keys.push('alerts')
-  if (p.startsWith('/students')) keys.push('students')
+  if (p.startsWith('/students') || p.startsWith('/cases')) keys.push('students')
   if (p.startsWith('/plans') || p.startsWith('/scales')) keys.push('assessment')
   if (p.startsWith('/dashboard/class')) keys.push('analytics')
   if (p.startsWith('/consult')) keys.push('consult')
@@ -208,6 +239,17 @@ function getDefaultOpenKeys() {
 }
 
 const openKeys = ref(getDefaultOpenKeys())
+
+/** 路由变化时自动展开当前页所在分组（不强制收起用户已折叠的其他组） */
+watch(
+  () => route.path,
+  () => {
+    const defaults = getDefaultOpenKeys()
+    const next = new Set(openKeys.value)
+    defaults.forEach((k) => next.add(k))
+    openKeys.value = [...next]
+  }
+)
 
 function toggleGroup(key) {
   const idx = openKeys.value.indexOf(key)
@@ -417,6 +459,11 @@ a.nav-item.nav-item--active::before {
 }
 
 /* ===== 子菜单 ===== */
+/* 未展开时隐藏子项（仅依赖 openKeys + nav-item--open；此前子菜单一直显示导致「无法收起」） */
+.nav-item.nav-item--parent:not(.nav-item--open) .nav-children {
+  display: none;
+}
+
 .nav-children {
   overflow: hidden;
   padding: 2px 0 4px;
