@@ -91,8 +91,18 @@
         <div class="quick-entry-wrap">
           <p class="quick-entry-hint">学生和家长请使用专属入口</p>
           <div class="quick-entry-btns">
-            <a class="quick-btn quick-btn--student" href="/h5/verify">学生答题入口</a>
-            <a class="quick-btn quick-btn--parent" href="/parent/bind">家长查看入口</a>
+            <a
+              class="quick-btn quick-btn--student"
+              href="https://psylink.chat/h5/verify"
+              target="_blank"
+              rel="noopener noreferrer"
+            >学生答题入口</a>
+            <a
+              class="quick-btn quick-btn--parent"
+              href="https://psylink.chat/parent/bind"
+              target="_blank"
+              rel="noopener noreferrer"
+            >家长查看入口</a>
           </div>
         </div>
 
