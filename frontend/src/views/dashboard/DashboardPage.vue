@@ -66,7 +66,10 @@
             </svg>
           </span>
           <div class="kpi-card-top">
-            <span class="kpi-card-label">本周测评人次</span>
+            <div class="kpi-card-label-wrap">
+              <span class="kpi-card-label">本周测评人次</span>
+              <DashHelpTip :text="dashHelp.kpiWeekly" />
+            </div>
             <span class="kpi-badge kpi-badge--green"
               :class="overview.weekly_rate_change >= 0 ? '' : 'kpi-badge--red'"
             >
@@ -108,7 +111,10 @@
             </svg>
           </span>
           <div class="kpi-card-top">
-            <span class="kpi-card-label">红色预警</span>
+            <div class="kpi-card-label-wrap">
+              <span class="kpi-card-label">红色预警</span>
+              <DashHelpTip :text="dashHelp.kpiRed" />
+            </div>
             <span class="kpi-badge kpi-badge--red-pill">待处理</span>
           </div>
           <div class="kpi-card-num">{{ overview.red_alert_pending }}</div>
@@ -140,7 +146,10 @@
             </svg>
           </span>
           <div class="kpi-card-top">
-            <span class="kpi-card-label">黄色预警</span>
+            <div class="kpi-card-label-wrap">
+              <span class="kpi-card-label">黄色预警</span>
+              <DashHelpTip :text="dashHelp.kpiYellow" />
+            </div>
             <span class="kpi-badge kpi-badge--amber-pill">跟进中</span>
           </div>
           <div class="kpi-card-num">{{ overview.yellow_alert_processing }}</div>
@@ -172,7 +181,10 @@
             </svg>
           </span>
           <div class="kpi-card-top">
-            <span class="kpi-card-label">在跟进个案</span>
+            <div class="kpi-card-label-wrap">
+              <span class="kpi-card-label">在跟进个案</span>
+              <DashHelpTip :text="dashHelp.kpiCase" />
+            </div>
             <span class="kpi-badge kpi-badge--blue-pill">+{{ overview.case_new_this_week }} 本周</span>
           </div>
           <div class="kpi-card-num">{{ overview.case_active }}</div>
@@ -228,6 +240,7 @@
           <div class="section-head">
             <div class="section-head-left">
               <h2 class="section-title">待处理预警</h2>
+              <DashHelpTip :text="dashHelp.pendingAlerts" />
               <span v-if="pendingTotal > 0" class="section-badge">{{ pendingTotal }}</span>
             </div>
             <a class="section-more" @click="router.push('/alerts')">
@@ -285,7 +298,10 @@
         <!-- 待办提醒 -->
         <section class="side-card">
           <div class="side-card-head">
-            <h3 class="side-card-title">待办提醒</h3>
+            <div class="side-card-title-wrap">
+              <h3 class="side-card-title">待办提醒</h3>
+              <DashHelpTip :text="dashHelp.todos" />
+            </div>
             <span class="side-card-count">{{ todoItems.length }}</span>
           </div>
           <a-spin :loading="loadingTodos">
@@ -317,7 +333,10 @@
         <!-- 进行中测评 -->
         <section class="side-card side-card--plans">
           <div class="side-card-head">
-            <h3 class="side-card-title">进行中测评</h3>
+            <div class="side-card-title-wrap">
+              <h3 class="side-card-title">进行中测评</h3>
+              <DashHelpTip :text="dashHelp.ongoingPlans" />
+            </div>
             <a class="side-card-more" @click="router.push('/plans/create')">
               新建
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -352,7 +371,10 @@
 
         <!-- 风险趋势图 -->
         <section class="side-card side-card--chart">
-          <h3 class="side-card-title side-card-title--mb">风险趋势（近30天）</h3>
+          <div class="side-card-title-row">
+            <h3 class="side-card-title">风险趋势（近30天）</h3>
+            <DashHelpTip :text="dashHelp.riskTrend" />
+          </div>
           <a-spin :loading="loadingTrend">
             <div ref="trendWrapRef" class="trend-wrap">
               <canvas ref="trendCanvasRef" class="trend-canvas" />
@@ -375,6 +397,7 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import DashHelpTip from '@/components/DashHelpTip.vue'
 import { todoItemsFallback } from '@/mock/data'
 import { useAuthStore } from '@/stores/auth'
 import * as dashboardApi from '@/api/dashboard'
@@ -382,6 +405,18 @@ import * as dashboardApi from '@/api/dashboard'
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+
+/** 工作台各区块标题旁 ? 说明文案 */
+const dashHelp = {
+  kpiWeekly: '本周内完成测评的学生人次，同一学生完成多份量表计多次',
+  kpiRed: '量表得分达到重度风险阈值，或单题触发自伤/自杀预警，需在24小时内完成初评',
+  kpiYellow: '量表得分达到中度风险阈值，需在15天内跟进处置，超期会自动提醒',
+  kpiCase: '当前状态为"进行中"的个案数量，点击可查看全部个案',
+  pendingAlerts: '所有待处置的红色和黄色预警，红色需优先处理，点击"立即处理"进入预警详情',
+  todos: '汇总需要关注的事项，包括未处置预警、跟进个案、即将截止的测评计划',
+  ongoingPlans: '当前正在进行、尚未截止的测评计划及完成进度',
+  riskTrend: '近30天每日新增预警数量趋势，帮助了解学生心理健康整体变化',
+}
 
 /** 截图用：访问 /dashboard?kpiHover=1 时展示 KPI 卡片 hover 态 */
 const kpiHoverDemo = computed(() => route.query.kpiHover === '1')
@@ -957,6 +992,13 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   margin-bottom: 8px;
 }
 
+.kpi-card-label-wrap {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+
 .kpi-card-label {
   font-size: 12px;
   color: var(--c2);
@@ -1411,6 +1453,22 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
 }
 
 .side-card-title--mb { margin-bottom: 12px; }
+
+.side-card-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.side-card-title-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.side-card-title-row .side-card-title {
+  margin: 0;
+}
 
 .side-card-head {
   display: flex;
