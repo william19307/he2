@@ -38,8 +38,9 @@
       >
         <router-view v-slot="{ Component }">
           <transition name="page" mode="out-in">
-            <MobileDesktopHint v-if="showDesktopOnlyHint" />
-            <component v-else :is="Component" />
+            <!-- :key 避免 /scales 与 /scales/:id 切换时过渡复用错误实例导致列表空白 -->
+            <MobileDesktopHint v-if="showDesktopOnlyHint" key="desktop-only-hint" />
+            <component v-else :is="Component" :key="route.path" />
           </transition>
         </router-view>
       </main>
