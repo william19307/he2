@@ -31,16 +31,6 @@
               项待处理 · 与学校一同守护学生心理健康成长
             </p>
           </div>
-          <div class="dash-welcome-illust dash-welcome-illust--plant" aria-hidden="true">
-            <img
-              src="/images/dashboard-banner-left.png"
-              alt=""
-              class="dash-banner-img dash-banner-img--left"
-              width="100"
-              height="100"
-              decoding="async"
-            />
-          </div>
         </div>
         <div class="dash-welcome-art" aria-hidden="true">
           <img
@@ -788,28 +778,12 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   color: var(--color-danger-6);
 }
 
-.dash-welcome-illust {
-  flex-shrink: 0;
-  width: 100px;
-  height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .dash-banner-img {
   display: block;
   max-width: 100%;
   height: auto;
-  object-fit: contain;
   pointer-events: none;
   user-select: none;
-}
-
-.dash-banner-img--left {
-  width: 100px;
-  height: 100px;
-  object-fit: contain;
 }
 
 .dash-welcome-art {

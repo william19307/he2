@@ -20,9 +20,6 @@
                   今日有 <span class="shot-count">4</span> 项待处理 · 与学校一同守护学生心理健康成长
                 </p>
               </div>
-              <div class="shot-plant" aria-hidden="true">
-                <img src="/images/dashboard-banner-left.png" alt="" class="shot-banner-left-img" width="64" height="64" decoding="async" />
-              </div>
             </div>
             <div class="shot-campus">
               <img src="/images/dashboard-banner-right.png" alt="" class="shot-banner-right-img" width="200" height="120" decoding="async" />
@@ -230,20 +227,6 @@ const planDemo = [
   background: #fff;
   color: var(--color-danger-6);
   border: 1px solid rgba(245, 63, 63, 0.3);
-}
-.shot-plant {
-  width: 64px;
-  height: 64px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.shot-banner-left-img {
-  width: 64px;
-  height: 64px;
-  object-fit: contain;
-  display: block;
 }
 .shot-campus {
   width: 140px;
