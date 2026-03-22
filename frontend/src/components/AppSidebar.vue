@@ -164,13 +164,13 @@
         <div class="nav-item nav-item--parent" :class="{ 'nav-item--open': openKeys.includes('intervention') }">
           <div class="nav-item-trigger" @click.stop="toggleGroup('intervention')">
             <span class="nav-item-icon"><IconApps /></span>
-            <span v-if="!appStore.sidebarCollapsed" class="nav-item-text">干预管理</span>
+            <span v-if="!appStore.sidebarCollapsed" class="nav-item-text">资源入口</span>
             <span v-if="!appStore.sidebarCollapsed" class="nav-chevron">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </span>
-            <span v-if="appStore.sidebarCollapsed" class="nav-tooltip">干预管理</span>
+            <span v-if="appStore.sidebarCollapsed" class="nav-tooltip">资源入口</span>
           </div>
           <div
             v-if="!appStore.sidebarCollapsed"
