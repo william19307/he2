@@ -9,6 +9,12 @@ const devRoutes = import.meta.env.DEV
         component: () => import('../views/dashboard/DashboardKpiScreenshot.vue'),
         meta: { title: 'KPI截图', public: true },
       },
+      {
+        path: '/dev/dashboard-alerts-screenshot',
+        name: 'DevDashboardAlertsScreenshot',
+        component: () => import('../views/dev/DashboardAlertsScreenshot.vue'),
+        meta: { title: '待处理预警截图', public: true },
+      },
     ]
   : []
 

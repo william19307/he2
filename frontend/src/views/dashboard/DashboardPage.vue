@@ -227,43 +227,36 @@
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="#D1D5DB" stroke-width="1.5"/><path d="M16 10v6M16 20v1" stroke="#D1D5DB" stroke-width="2" stroke-linecap="round"/></svg>
               <span>暂无待处理预警</span>
             </div>
-            <div v-else class="alert-list">
+            <div v-else class="alert-list alert-list--compact">
               <div
                 v-for="alert in displayAlerts"
                 :key="alert.id"
-                class="alert-card"
-                :class="alert.level === 'red' ? 'alert-card--red' : 'alert-card--amber'"
+                class="alert-row"
+                :class="alert.level === 'red' ? 'alert-row--red' : 'alert-row--amber'"
               >
-                <div class="alert-card-head">
+                <div class="alert-row-bar" aria-hidden="true" />
+                <div class="alert-row-mid">
                   <span :class="alert.level === 'red' ? 'alert-tag--red' : 'alert-tag--amber'">
                     {{ alert.level === 'red' ? '红色预警' : '黄色预警' }}
                   </span>
-                  <span class="alert-time">{{ alert.timeAgo }}</span>
-                </div>
-                <div class="alert-card-body">
-                  <div class="alert-student">
-                    <span class="alert-name">{{ alert.studentName }}</span>
-                    <span class="alert-class">{{ alert.className }}</span>
+                  <div class="alert-row-identity">
+                    <span class="alert-row-name">{{ alert.studentName }}</span>
+                    <span class="alert-row-class">{{ alert.className }}</span>
                   </div>
-                  <div class="alert-scale-row">
-                    <span class="alert-scale-name">{{ alert.scaleName }}</span>
-                    <span
-                      v-if="alert.score != null"
-                      :class="alert.level === 'red' ? 'alert-score--red' : 'alert-score--amber'"
-                    >{{ alert.score }}/{{ alert.totalScore }}分</span>
+                  <div class="alert-row-scale-wrap">
+                    <span class="alert-row-scale">{{ alert.scaleName }}</span>
+                    <span v-if="alert.score != null" class="alert-score-green">{{ alert.score }}/{{ alert.totalScore }}分</span>
                   </div>
-                  <p v-if="alert.reason && alert.level === 'red'" class="alert-reason">{{ alert.reason }}</p>
                 </div>
-                <div class="alert-card-footer">
-                  <span class="alert-footer-time">{{ alert.triggerTime }}</span>
+                <div class="alert-row-aside">
+                  <span class="alert-row-time">{{ alert.timeAgo || alert.triggerTime }}</span>
                   <button
-                    :class="alert.level === 'red' ? 'alert-action--red' : 'alert-action--amber'"
+                    type="button"
+                    class="alert-row-action"
+                    :class="alert.level === 'red' ? 'alert-row-action--red' : 'alert-row-action--amber'"
                     @click="router.push(`/alerts/${alert.id}`)"
                   >
                     {{ alert.status === 'pending' ? '立即处理' : '查看详情' }}
-                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                      <path d="M2 5.5h7M5.5 2l3.5 3.5L5.5 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
                   </button>
                 </div>
               </div>
@@ -970,168 +963,178 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   border-radius: var(--radius);
 }
 
-/* ========== 预警卡片 ========== */
-.alert-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.alert-card {
+/* ========== 待处理预警 · 紧凑列表（约 60px/行）========== */
+.alert-list--compact {
   background: var(--bg-card);
-  border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  transition: box-shadow 0.18s;
 }
-.alert-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.06); }
 
-.alert-card--red { border-left: 3px solid var(--color-danger-6); }
-.alert-card--amber { border-left: 3px solid var(--color-warning-6); }
-
-.alert-card-head {
+.alert-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px 0;
+  min-height: 60px;
+  padding: 8px 12px 8px 0;
+  gap: 0;
+  border-bottom: 1px solid var(--color-bg-2);
+  transition: background 0.15s;
+}
+.alert-row:last-child {
+  border-bottom: none;
+}
+.alert-row:hover {
+  background: var(--color-bg-1);
+}
+
+.alert-row-bar {
+  width: 4px;
+  flex-shrink: 0;
+  align-self: stretch;
+  min-height: 44px;
+  border-radius: 0 2px 2px 0;
+  margin-right: 10px;
+}
+.alert-row--red .alert-row-bar {
+  background: var(--color-danger-6);
+}
+.alert-row--amber .alert-row-bar {
+  background: var(--color-warning-6);
+}
+
+.alert-row-mid {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
 }
 
 .alert-tag--red {
-  display: inline-block;
-  padding: 3px 8px;
-  font-size: 11.5px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--alert-red-text);
   background: var(--alert-red-bg);
-  border-radius: 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .alert-tag--amber {
-  display: inline-block;
-  padding: 3px 8px;
-  font-size: 11.5px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--alert-yellow-text);
   background: var(--alert-yellow-bg);
-  border-radius: 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
-.alert-time {
-  font-size: 12px;
-  color: var(--c3);
-}
-
-.alert-card-body {
-  padding: 10px 16px 12px;
-}
-
-.alert-student {
-  display: flex;
+.alert-row-identity {
+  display: inline-flex;
   align-items: baseline;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 140px;
+  max-width: 100%;
 }
 
-.alert-name {
-  font-size: 15px;
+.alert-row-name {
+  font-size: 14px;
   font-weight: 700;
   color: var(--c1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.alert-class {
-  font-size: 12.5px;
-  color: var(--c2);
-}
-
-.alert-scale-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.alert-scale-name {
+.alert-row-class {
   font-size: 13px;
-  color: var(--c2);
-}
-
-.alert-score--red {
-  display: inline-block;
-  padding: 1px 7px;
-  font-size: 12px;
   font-weight: 700;
-  color: var(--alert-red-text);
-  background: var(--alert-red-bg);
-  border-radius: 5px;
+  color: var(--c1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.alert-score--amber {
-  display: inline-block;
-  padding: 1px 7px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--alert-yellow-text);
-  background: var(--alert-yellow-bg);
-  border-radius: 5px;
-}
-
-.alert-reason {
-  margin: 8px 0 0;
-  font-size: 12px;
-  color: var(--c2);
-  line-height: 1.55;
-  background: var(--color-bg-2);
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-}
-
-.alert-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px 12px;
-  border-top: 1px solid var(--color-bg-2);
-}
-
-.alert-footer-time {
-  font-size: 12px;
-  color: var(--c3);
-}
-
-.alert-action--red {
+.alert-row-scale-wrap {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.alert-row-scale {
+  font-size: 13px;
+  color: var(--c2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.alert-score-green {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #047857;
+  background: #d1fae5;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.alert-row-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
   gap: 4px;
-  height: 30px;
-  padding: 0 12px;
+  flex-shrink: 0;
+  padding-left: 8px;
+}
+
+.alert-row-time {
+  font-size: 11px;
+  color: var(--c3);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.alert-row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.alert-row-action--red {
   background: var(--color-danger-6);
   color: #fff;
-  border: none;
-  border-radius: 7px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
 }
-.alert-action--red:hover { background: #DC2626; } /* red-600 hover */
-
-.alert-action--amber {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 30px;
-  padding: 0 12px;
+.alert-row-action--red:hover {
+  background: #dc2626;
+}
+.alert-row-action--amber {
   background: var(--color-warning-6);
   color: #fff;
-  border: none;
-  border-radius: 7px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
 }
-.alert-action--amber:hover { background: #D97706; } /* amber-700, no variable needed */
+.alert-row-action--amber:hover {
+  background: #d97706;
+}
 
 /* ========== 测评列表 ========== */
 .plan-list {
