@@ -293,6 +293,33 @@ function containsAlertKeyword(text) {
 
 function parseQuestions(md) {
   const allTables = parseAllTablesWithContext(md);
+  // CDI 等：题号 + A/B/C 三陈述（无「题目内容」列）
+  const abcTable = allTables.find((t) => {
+    if (!t.headers.includes('题号')) return false;
+    const hasA = t.headers.some((h) => /^A[（(]/.test(String(h).trim()));
+    const hasB = t.headers.some((h) => /^B[（(]/.test(String(h).trim()));
+    const hasC = t.headers.some((h) => /^C[（(]/.test(String(h).trim()));
+    return hasA && hasB && hasC;
+  });
+  if (abcTable) {
+    const h = abcTable.headers;
+    const aKey = h.find((x) => /^A[（(]/.test(String(x).trim()));
+    const bKey = h.find((x) => /^B[（(]/.test(String(x).trim()));
+    const cKey = h.find((x) => /^C[（(]/.test(String(x).trim()));
+    return abcTable.data
+      .map((r) => {
+        const no = parseNumber(r.题号, null);
+        const a = (r[aKey] || '').trim();
+        const b = (r[bKey] || '').trim();
+        const c = (r[cKey] || '').trim();
+        if (!no) return null;
+        const questionText = [a, b, c].filter(Boolean).join(' | ');
+        if (!questionText) return null;
+        return { questionNo: no, questionText, subscaleKey: '' };
+      })
+      .filter(Boolean);
+  }
+
   const table = allTables.find((t) =>
     t.headers.includes('题号')
     && (t.headers.includes('题目内容') || t.headers.includes('题目内容（示例）'))
@@ -510,6 +537,16 @@ async function resolveCategoryIdByFile(filePath, explicitCategoryId) {
     return BigInt(explicitCategoryId);
   }
   const norm = filePath.replace(/\\/g, '/');
+  // ready/ 子目录与 students|adults|teachers 同级，需单独匹配
+  if (norm.includes('/scales-data/ready/students/')) {
+    return ensureCategoryByName(AUTO_CATEGORY_MAP.students);
+  }
+  if (norm.includes('/scales-data/ready/teachers/')) {
+    return ensureCategoryByName(AUTO_CATEGORY_MAP.teachers);
+  }
+  if (norm.includes('/scales-data/ready/adults/')) {
+    return ensureCategoryByName(AUTO_CATEGORY_MAP.adults);
+  }
   if (norm.includes('/scales-data/students/')) {
     return ensureCategoryByName(AUTO_CATEGORY_MAP.students);
   }
