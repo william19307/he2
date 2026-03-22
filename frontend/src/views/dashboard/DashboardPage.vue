@@ -307,7 +307,7 @@
           <a-spin :loading="loadingTodos">
             <ul class="todo-list">
               <li
-                v-for="item in todoItems"
+                v-for="item in paginatedTodoItems"
                 :key="item.id"
                 class="todo-item"
                 :class="{ 'todo-item--clickable': isTodoNavigable(item) }"
@@ -327,6 +327,41 @@
                 >{{ item.dueTime }}</span>
               </li>
             </ul>
+            <nav
+              v-if="todoTotalPages > 1"
+              class="todo-pager"
+              aria-label="待办分页"
+            >
+              <button
+                type="button"
+                class="todo-pager__text"
+                :disabled="todoCurrentPage <= 1"
+                @click="todoCurrentPage--"
+              >
+                上一页
+              </button>
+              <span class="todo-pager__chev" aria-hidden="true">&lt;</span>
+              <button
+                v-for="p in todoTotalPages"
+                :key="p"
+                type="button"
+                class="todo-pager__num"
+                :class="{ 'todo-pager__num--active': p === todoCurrentPage }"
+                :aria-current="p === todoCurrentPage ? 'page' : undefined"
+                @click="todoCurrentPage = p"
+              >
+                {{ p }}
+              </button>
+              <span class="todo-pager__chev" aria-hidden="true">&gt;</span>
+              <button
+                type="button"
+                class="todo-pager__text"
+                :disabled="todoCurrentPage >= todoTotalPages"
+                @click="todoCurrentPage++"
+              >
+                下一页
+              </button>
+            </nav>
           </a-spin>
         </section>
 
@@ -524,6 +559,26 @@ const trendWrapRef = ref(null)
 
 const todoItems = ref([])
 const loadingTodos = ref(true)
+
+/** 待办列表分页（每页 10 条，仅前端切片） */
+const TODO_PAGE_SIZE = 10
+const todoCurrentPage = ref(1)
+const todoTotalPages = computed(() => {
+  const n = todoItems.value.length
+  if (n <= 0) return 1
+  return Math.max(1, Math.ceil(n / TODO_PAGE_SIZE))
+})
+const paginatedTodoItems = computed(() => {
+  const start = (todoCurrentPage.value - 1) * TODO_PAGE_SIZE
+  return todoItems.value.slice(start, start + TODO_PAGE_SIZE)
+})
+watch(
+  () => todoItems.value.length,
+  () => {
+    const max = todoTotalPages.value
+    if (todoCurrentPage.value > max) todoCurrentPage.value = max
+  },
+)
 
 function formatAlertTime(iso) {
   if (!iso) return ''
@@ -1586,6 +1641,72 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   flex-shrink: 0;
 }
 .todo-time--overdue { color: var(--color-danger-6); font-weight: 600; }
+
+/* ===== 待办分页（紧凑、居中） ===== */
+.todo-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-bg-2);
+  font-size: 12px;
+  color: var(--c2);
+}
+
+.todo-pager__text {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 12px;
+  line-height: 22px;
+  color: var(--c2);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.todo-pager__text:hover:not(:disabled) {
+  color: var(--color-primary-5);
+  border-color: var(--color-primary-3);
+}
+.todo-pager__text:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.todo-pager__chev {
+  color: var(--c3);
+  font-size: 11px;
+  user-select: none;
+  padding: 0 2px;
+}
+
+.todo-pager__num {
+  height: 24px;
+  min-width: 24px;
+  padding: 0 6px;
+  font-size: 12px;
+  line-height: 22px;
+  color: var(--c2);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.todo-pager__num:hover {
+  border-color: var(--border);
+  background: var(--color-bg-1);
+}
+.todo-pager__num--active {
+  color: var(--color-primary-6);
+  font-weight: 600;
+  border-color: var(--color-primary-3);
+  background: var(--color-primary-1, #e8f4ff);
+}
 
 /* ===== 趋势图 ===== */
 .side-card--chart {}

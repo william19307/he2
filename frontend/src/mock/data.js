@@ -102,13 +102,24 @@ export const alertList = [
   },
 ]
 
-/** 工作台待办回退数据（与 GET /dashboard/todos 字段对齐） */
+/** 工作台待办回退数据（与 GET /dashboard/todos 字段对齐，16 条便于分页自测） */
 export const todoItemsFallback = [
   { id: 'fb-1', text: '李梦瑶红色预警未处置', due_time: '今天 17:00', link_type: 'alert', link_id: 1, overdue: false },
   { id: 'fb-2', text: '赵子轩红色预警未处置', due_time: '今天 18:00', link_type: 'alert', link_id: 2, overdue: false },
   { id: 'fb-3', text: '陈小雨黄色预警跟进超3天', due_time: '已超期', link_type: 'alert', link_id: 3, overdue: true },
   { id: 'fb-4', text: '个案：李明浩', due_time: '—', link_type: 'case', link_id: 1, overdue: false },
   { id: 'fb-5', text: '测评计划：2025春季心理普测', due_time: '2025-03-20', link_type: 'plan', link_id: 1, overdue: false },
+  { id: 'fb-6', text: '王芳红色预警未处置', due_time: '今天 16:00', link_type: 'alert', link_id: 6, overdue: false },
+  { id: 'fb-7', text: '个案：张晓彤', due_time: '—', link_type: 'case', link_id: 2, overdue: false },
+  { id: 'fb-8', text: '测评计划：初三考前筛查', due_time: '2025-03-28', link_type: 'plan', link_id: 2, overdue: false },
+  { id: 'fb-9', text: '刘洋黄色预警待跟进', due_time: '明天 10:00', link_type: 'alert', link_id: 9, overdue: false },
+  { id: 'fb-10', text: '周杰红色预警未处置', due_time: '今天 15:30', link_type: 'alert', link_id: 10, overdue: false },
+  { id: 'fb-11', text: '个案：吴敏', due_time: '—', link_type: 'case', link_id: 3, overdue: false },
+  { id: 'fb-12', text: '孙丽黄色预警跟进中', due_time: '3天内', link_type: 'alert', link_id: 12, overdue: false },
+  { id: 'fb-13', text: '测评计划：高一心理健康月', due_time: '2025-04-01', link_type: 'plan', link_id: 3, overdue: false },
+  { id: 'fb-14', text: '郑浩红色预警未处置', due_time: '今天 14:00', link_type: 'alert', link_id: 14, overdue: false },
+  { id: 'fb-15', text: '钱雪黄色预警超期', due_time: '已超期', link_type: 'alert', link_id: 15, overdue: true },
+  { id: 'fb-16', text: '个案：冯凯', due_time: '—', link_type: 'case', link_id: 4, overdue: false },
 ]
 
 export const weeklyStats = {
