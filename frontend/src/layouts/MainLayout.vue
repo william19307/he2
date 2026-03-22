@@ -37,9 +37,17 @@
         }"
       >
         <router-view v-slot="{ Component }">
-          <transition name="page" mode="out-in">
-            <MobileDesktopHint v-if="showDesktopOnlyHint" />
-            <component v-else :is="Component" />
+          <!-- 勿用 mode="out-in"：异步路由下易出现 leave 结束后 enter 未挂上，Component 短暂 undefined 时主区域无节点 -->
+          <transition name="page">
+            <MobileDesktopHint v-if="showDesktopOnlyHint" key="desktop-only-hint" />
+            <component
+              v-else-if="Component"
+              :is="Component"
+              :key="route.fullPath"
+            />
+            <div v-else key="route-async-placeholder" class="route-async-placeholder">
+              <a-spin tip="页面加载中..." />
+            </div>
           </transition>
         </router-view>
       </main>
@@ -261,6 +269,14 @@ function onTabClick(tab) {
   font-size: 10px;
   font-weight: 500;
   line-height: 1;
+}
+
+.route-async-placeholder {
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
 }
 
 /* ===== 路由过渡 ===== */

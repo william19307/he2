@@ -44,11 +44,16 @@
         </a-alert>
 
         <div class="scale-grid-wrap">
-          <!-- loading 时勿往 spin 里塞空网格，否则 Arco Spin 可能只显示遮罩导致「一片空白」 -->
-          <a-spin :loading="loading" class="scale-spin" style="width: 100%; min-height: 240px">
-            <template v-if="!loading">
-              <a-empty v-if="!scales.length" description="暂无量表" />
-              <div v-else class="scale-card-grid">
+          <!-- 不要用 v-if="!loading" 包住整块内容：loading 时插槽为空 + 过渡动画易导致「全白无 Spin」 -->
+          <a-spin
+            :loading="loading"
+            tip="加载中..."
+            class="scale-spin"
+            style="width: 100%; min-height: 240px; display: block"
+          >
+            <div class="scale-spin-inner">
+              <a-empty v-if="!loading && !scales.length" description="暂无量表" />
+              <div v-else-if="scales.length" class="scale-card-grid">
               <div
                 v-for="record in scales"
                 :key="String(record.id)"
@@ -91,7 +96,7 @@
                 </div>
               </div>
               </div>
-            </template>
+            </div>
           </a-spin>
 
           <div v-if="pagination.total > 0" class="scale-pager">
@@ -112,11 +117,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onActivated } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import request from '@/utils/request'
 
 const router = useRouter()
+const route = useRoute()
 const categories = ref([])
 const scales = ref([])
 const loading = ref(false)
@@ -205,13 +211,19 @@ async function loadScales() {
 
 onMounted(async () => {
   await loadCategories()
-  loadScales()
 })
 
-/** 从详情页返回时若列表被 KeepAlive 缓存，需重新拉取数据 */
-onActivated(() => {
-  loadScales()
-})
+/**
+ * 列表数据加载：未对路由页做 KeepAlive，onActivated 不会在「详情→返回」时触发；
+ * 用 watch 保证进入 /scales 时必拉列表（与 MainLayout 路由过渡修复配合）。
+ */
+watch(
+  () => route.path,
+  (p) => {
+    if (p === '/scales') loadScales()
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>
@@ -235,6 +247,9 @@ onActivated(() => {
 }
 .scale-spin {
   width: 100%;
+  min-height: 200px;
+}
+.scale-spin-inner {
   min-height: 200px;
 }
 .scale-card-grid {

@@ -337,6 +337,7 @@ docker stats --no-stream
 | HTTPS 证书无效 / 443 无法访问 | 证书未复制到 `nginx/certs/` | 重新执行第 8 步证书复制命令，`docker compose restart nginx` |
 | 登录提示"学校编码不能为空" | 前端请求字段为 `tenant_code` | 确认登录表单传递了 `tenant_code` 字段（见 `auth.js` 路由） |
 | 前端刷新 404 | Nginx 未配置 history 模式 | 确认 `nginx/default.conf` 中有 `try_files $uri $uri/ /index.html` |
+| 本地已修复、推 GitHub 后线上仍是旧版 | ① 只推了 `dev` 而 CI 只部署 `main`（或服务器只 `git pull main`）② `index.html` 被浏览器/CDN 强缓存 | 合并到 `main` 再推送，或已改为随 `dev`/`main` 部署；确认 `location = /index.html` 为 no-cache；服务器上 `frontend` 执行 `npm run build` 后 `docker compose restart nginx` |
 | 内存不足 OOM | 容器内存限制过低 | 调整 `docker-compose.yml` 中 `limits.memory`；建议服务器 ≥ 2GB |
 | 豆包 AI 不回复 | DOUBAO_API_KEY 为空 | 填写有效 API Key 后重启后端：`docker compose restart backend` |
 
