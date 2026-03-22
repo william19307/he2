@@ -1,6 +1,6 @@
 # 心理健康测评平台 · 生产部署文档
 
-> 最后更新：2026-03-20  
+> 最后更新：2026-03-21  
 > 技术栈：Node.js 22 + Express · Prisma · MySQL 8 · Vue 3 + Vite · Nginx · Docker Compose
 
 ---
@@ -300,6 +300,7 @@ sudo certbot renew --dry-run
 - [ ] 管理员登录成功（学校编码：部署时 seed 脚本输出的编码）
 - [ ] 工作台首页数据加载（`GET /api/v1/dashboard/overview` 有响应）
 - [ ] 预警列表页可以打开
+- [ ] 个案管理（`GET /api/v1/cases`，需心理老师及以上 Token）有列表数据或与种子一致
 - [ ] 学生 H5 端访问 `/h5` 正常加载
 - [ ] 量表列表可以看到 PHQ-9、GAD-7 等系统量表
 

@@ -340,6 +340,29 @@
 
 ---
 
+## `/api/v1/cases`（个案档案）
+
+- **权限**：`authorize('counselor')`（心理老师、医生、管理员、超管）
+- **挂载**：`authenticate` + `injectTenant`
+
+### GET `/`
+
+- **Query**：`status`=`active`|`closed`|`all`（默认 `active`）；`page`（默认 1）；`page_size`（默认 20）；`keyword`（学生姓名，模糊）
+- **Response data**：`list[]`（`id`, `student_id`, `student_name`, `class_name`, `student_no`, `counselor_name`, `status`, `priority`, `priority_label`, `summary`, `created_at`, `last_record_at`, `record_count`, `alert_level`），`total`, `page`, `page_size`
+- **说明**：`alert_level` 为该学生在 **pending / processing** 预警中的最高等级（red 优先于 yellow）；无则 `null`
+
+### GET `/:id`
+
+- **Response data**：`case`（个案扁平字段，含 `open_date`/`close_date`/`close_reason` 等东八区 ISO）、`records[]`（按记录时间倒序，含 `operator_name`、`record_type`、`record_date`、`content`、`next_plan` 等）
+
+### POST `/:id/close`
+
+- **Body**：`close_reason` 或 `closeReason` 必填（结案原因）
+- **Response data**：`id`, `status`, `close_date`, `close_reason`, `updated_at`；`message` 为「个案已结案」
+- **错误**：已结案时 `400` + 业务码 `2002`
+
+---
+
 ## `/api/v1/admin`
 
 - **权限**：**admin**（及 super_admin）全文

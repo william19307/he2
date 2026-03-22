@@ -52,3 +52,7 @@ npm run db:up
 ## 测试账号（seed 后）
 
 - 管理员：`admin` / `123456` / 学校编码 `demo_school`
+
+## 个案管理 API
+
+心理老师及以上可调用 **`/api/v1/cases`**（列表、详情、结案），与数据库表 `case_files` / `case_records` 对应。完整字段与 Query 见仓库根目录 **[api-actual.md](../api-actual.md)** 中「`/api/v1/cases`」一节。
