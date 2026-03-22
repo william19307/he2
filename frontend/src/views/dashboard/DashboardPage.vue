@@ -1,5 +1,8 @@
 <template>
   <div class="dash">
+    <div class="dash-split">
+      <!-- 左侧主区：独立纵向滚动 -->
+      <div class="dash-main-scroll">
     <!-- 顶栏：标题 + 操作 -->
     <header class="dash-toolbar">
       <div class="dash-toolbar-left">
@@ -248,10 +251,6 @@
       </div>
     </a-spin>
 
-    <!-- 主内容区 -->
-    <div class="dash-body">
-      <!-- 左栏 -->
-      <div class="dash-col-main">
         <!-- 待处理预警 -->
         <section class="dash-section">
           <div class="section-head">
@@ -271,39 +270,37 @@
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="#D1D5DB" stroke-width="1.5"/><path d="M16 10v6M16 20v1" stroke="#D1D5DB" stroke-width="2" stroke-linecap="round"/></svg>
               <span>暂无待处理预警</span>
             </div>
-            <div v-else class="alert-grid">
+            <div v-else class="alert-list alert-list--compact">
               <div
                 v-for="alert in displayAlerts"
                 :key="alert.id"
-                class="alert-tile"
-                :class="alert.level === 'red' ? 'alert-tile--red' : 'alert-tile--amber'"
+                class="alert-row"
+                :class="alert.level === 'red' ? 'alert-row--red' : 'alert-row--amber'"
               >
-                <div class="alert-tile-accent" aria-hidden="true" />
-                <div class="alert-tile-avatar" :title="alert.studentName">
-                  {{ studentInitial(alert.studentName) }}
+                <div class="alert-row-bar" aria-hidden="true" />
+                <div class="alert-row-mid">
+                  <span :class="alert.level === 'red' ? 'alert-tag--red' : 'alert-tag--amber'">
+                    {{ alert.level === 'red' ? '红色预警' : '黄色预警' }}
+                  </span>
+                  <div class="alert-row-identity">
+                    <span class="alert-row-name">{{ alert.studentName }}</span>
+                    <span class="alert-row-class">{{ alert.className }}</span>
+                  </div>
+                  <div class="alert-row-scale-wrap">
+                    <span class="alert-row-scale">{{ alert.scaleName }}</span>
+                    <span v-if="alert.score != null" class="alert-score-green">{{ alert.score }}/{{ alert.totalScore }}分</span>
+                  </div>
                 </div>
-                <div class="alert-tile-body">
-                  <div class="alert-tile-top">
-                    <span class="alert-tile-name">{{ alert.studentName }}</span>
-                    <span class="alert-tile-time-rel">{{ alert.timeAgo || '—' }}</span>
-                  </div>
-                  <div class="alert-tile-scoreline">
-                    {{ alert.scaleName }}
-                    <template v-if="alert.score != null">
-                      （{{ alert.score }}/{{ alert.totalScore }}）
-                    </template>
-                  </div>
-                  <div class="alert-tile-foot">
-                    <span class="alert-tile-time-abs">{{ alert.triggerTime }}</span>
-                    <button
-                      type="button"
-                      class="alert-tile-btn"
-                      :class="alert.level === 'red' ? 'alert-tile-btn--red' : 'alert-tile-btn--amber'"
-                      @click="router.push(`/alerts/${alert.id}`)"
-                    >
-                      {{ alert.status === 'pending' ? '立即处理' : '查看详情' }}
-                    </button>
-                  </div>
+                <div class="alert-row-aside">
+                  <span class="alert-row-time">{{ alert.timeAgo || alert.triggerTime }}</span>
+                  <button
+                    type="button"
+                    class="alert-row-action"
+                    :class="alert.level === 'red' ? 'alert-row-action--red' : 'alert-row-action--amber'"
+                    @click="router.push(`/alerts/${alert.id}`)"
+                  >
+                    {{ alert.status === 'pending' ? '立即处理' : '查看详情' }}
+                  </button>
                 </div>
               </div>
             </div>
@@ -350,8 +347,8 @@
         </section>
       </div>
 
-      <!-- 右栏 -->
-      <div class="dash-col-side">
+      <!-- 右侧固定栏：独立纵向滚动 -->
+      <aside class="dash-side-scroll" aria-label="待办与趋势">
         <!-- 待办提醒 -->
         <section class="side-card">
           <div class="side-card-head">
@@ -390,7 +387,7 @@
             </div>
           </a-spin>
         </section>
-      </div>
+      </aside>
     </div>
   </div>
 </template>
@@ -413,13 +410,6 @@ function todoDotColor(item) {
   if (item.type === 'alert' || item.priority === 'high') return 'red'
   if (item.type === 'follow' || item.priority === 'medium') return 'amber'
   return 'gray'
-}
-
-/** 头像占位圆内文字：取姓名首字 */
-function studentInitial(name) {
-  const s = (name || '').trim()
-  if (!s.length) return '?'
-  return s[0]
 }
 
 function buildSpark7(endVal) {
@@ -660,13 +650,57 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   --radius: var(--radius-lg, 12px);
   --gap: 16px;
   --pad: 20px;
+  --dash-pad-x: 24px;
+  --dash-pad-y: 20px;
 
-  min-height: 100%;
-  padding: 28px 28px 32px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
   background: var(--bg-page);
   color: var(--c1);
   line-height: 1.6;
   box-sizing: border-box;
+}
+
+/* 顶栏以下：左右分栏，各占 calc(100vh - 顶栏56px) 剩余高度 */
+.dash-split {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+.dash-main-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: var(--dash-pad-y) var(--dash-pad-x) 32px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dash-main-scroll .dash-section:last-child {
+  margin-bottom: 0;
+}
+
+.dash-side-scroll {
+  width: 340px;
+  flex-shrink: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--dash-pad-y) 16px 32px;
+  background: #f7f8fa;
+  border-left: 1px solid var(--border);
+  box-sizing: border-box;
+}
+
+.dash-side-scroll .side-card:last-child {
+  margin-bottom: 0;
 }
 
 /* ========== 顶栏 + 欢迎横幅 ========== */
@@ -707,8 +741,8 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
 
 .dash-welcome-banner {
   min-height: 160px;
-  margin: 0 -28px 20px;
-  padding: 0 28px;
+  margin: 0 calc(-1 * var(--dash-pad-x)) 20px;
+  padding: 0 var(--dash-pad-x);
   background: linear-gradient(135deg, #e8f5f0 0%, #f0faf7 100%);
   border-bottom: 1px solid rgba(45, 122, 106, 0.12);
   box-sizing: border-box;
@@ -805,10 +839,6 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
 }
 
 @media (max-width: 768px) {
-  .dash-welcome-banner {
-    margin: 0 -16px 16px;
-    padding: 0 16px;
-  }
   .dash-welcome-inner {
     flex-direction: column;
     align-items: flex-start;
@@ -1020,24 +1050,6 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   background: var(--border);
 }
 
-/* ========== 主体二栏 ========== */
-.dash-body {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: var(--gap);
-  align-items: stretch;
-}
-
-.dash-col-main {
-  display: flex;
-  flex-direction: column;
-}
-
-.dash-col-main .dash-section:last-child {
-  flex: 1;
-  margin-bottom: 0;
-}
-
 /* ========== Spin 撑满宽度 ========== */
 .dash-section :deep(.arco-spin),
 .side-card :deep(.arco-spin),
@@ -1109,147 +1121,177 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   border-radius: var(--radius);
 }
 
-/* ========== 待处理预警 · 两列网格卡片 ========== */
-.alert-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-@media (max-width: 900px) {
-  .alert-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.alert-tile {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-  gap: 12px;
-  padding: 12px 14px 12px 0;
+/* ========== 待处理预警 · 紧凑列表 ========== */
+.alert-list--compact {
   background: var(--bg-card);
   border-radius: var(--radius);
-  border: 1px solid var(--border);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
-  transition: box-shadow 0.18s, transform 0.18s;
   overflow: hidden;
+  border: 1px solid var(--border);
 }
 
-.alert-tile:hover {
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+.alert-row {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 8px 12px 8px 0;
+  gap: 0;
+  border-bottom: 1px solid var(--color-bg-2);
+  transition: background 0.15s;
+}
+.alert-row:last-child {
+  border-bottom: none;
+}
+.alert-row:hover {
+  background: var(--color-bg-1);
 }
 
-.alert-tile-accent {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
+.alert-row-bar {
   width: 4px;
+  flex-shrink: 0;
+  align-self: stretch;
+  min-height: 40px;
   border-radius: 0 2px 2px 0;
+  margin-right: 10px;
 }
-
-.alert-tile--red .alert-tile-accent {
+.alert-row--red .alert-row-bar {
   background: var(--color-danger-6);
 }
-
-.alert-tile--amber .alert-tile-accent {
+.alert-row--amber .alert-row-bar {
   background: var(--color-warning-6);
 }
 
-.alert-tile-avatar {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  margin-left: 8px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #e8f5f0, #d1ebe0);
-  border: 1px solid rgba(45, 122, 106, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--color-primary-6);
-}
-
-.alert-tile-body {
+.alert-row-mid {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+.alert-tag--red {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--alert-red-text);
+  background: var(--alert-red-bg);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.alert-tag--amber {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--alert-yellow-text);
+  background: var(--alert-yellow-bg);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.alert-row-identity {
+  display: inline-flex;
+  align-items: baseline;
   gap: 6px;
+  min-width: 0;
+  flex: 1 1 120px;
+  max-width: 100%;
 }
 
-.alert-tile-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.alert-tile-name {
-  font-size: 15px;
+.alert-row-name {
+  font-size: 14px;
   font-weight: 700;
   color: var(--c1);
-  line-height: 1.3;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.alert-row-class {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alert-row-scale-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.alert-row-scale {
+  font-size: 13px;
+  color: var(--c2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.alert-score-green {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #047857;
+  background: #d1fae5;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.alert-row-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-left: 8px;
+}
+
+.alert-row-time {
+  font-size: 11px;
+  color: var(--c3);
+  line-height: 1.2;
   white-space: nowrap;
 }
 
-.alert-tile-time-rel {
-  flex-shrink: 0;
-  font-size: 12px;
-  color: var(--c3);
-}
-
-.alert-tile-scoreline {
-  font-size: 13px;
-  color: var(--c2);
-  line-height: 1.4;
-  word-break: break-word;
-}
-
-.alert-tile-foot {
-  display: flex;
+.alert-row-action {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 2px;
-}
-
-.alert-tile-time-abs {
-  font-size: 11px;
-  color: var(--c3);
-}
-
-.alert-tile-btn {
-  flex-shrink: 0;
-  height: 30px;
-  padding: 0 12px;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
   border: none;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
+  white-space: nowrap;
+}
+.alert-row-action--red {
+  background: var(--color-danger-6);
   color: #fff;
 }
-
-.alert-tile-btn--red {
-  background: var(--color-danger-6);
-}
-
-.alert-tile-btn--red:hover {
+.alert-row-action--red:hover {
   background: #dc2626;
 }
-
-.alert-tile-btn--amber {
+.alert-row-action--amber {
   background: var(--color-warning-6);
+  color: #fff;
 }
-
-.alert-tile-btn--amber:hover {
+.alert-row-action--amber:hover {
   background: #d97706;
 }
 
@@ -1455,27 +1497,21 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   .kpi-row { grid-template-columns: repeat(2, 1fr); }
 }
 
-@media (max-width: 1100px) {
-  .dash-body { grid-template-columns: 1fr; }
-  .dash-col-side { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap); }
-  .side-card { margin-bottom: 0; }
-  .side-card--chart { grid-column: 1 / -1; }
-}
-
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .dash {
-    padding: 16px;
     --gap: 12px;
     --pad: 14px;
+    --dash-pad-x: 16px;
+    --dash-pad-y: 16px;
+  }
+
+  /* 移动端（<768px）：右侧栏收起，仅左侧主区滚动 */
+  .dash-side-scroll {
+    display: none;
   }
 
   .dash-toolbar { flex-direction: column; align-items: stretch; gap: 12px; }
   .btn-new-plan { width: 100% !important; justify-content: center; }
-
-  .dash-welcome-banner {
-    margin: 0 -16px 16px;
-    padding: 0 16px;
-  }
 
   .kpi-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .kpi-card-num { font-size: 30px; }
@@ -1489,12 +1525,13 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   .week-strip-divider:nth-child(6) { display: none; }
   .week-strip-item { padding: 4px 8px; }
   .week-strip-num { font-size: 20px; }
-
-  .dash-col-side { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
-  .dash { padding: 12px; }
+  .dash {
+    --dash-pad-x: 12px;
+    --dash-pad-y: 12px;
+  }
   .kpi-row { grid-template-columns: 1fr; }
   .kpi-spark { display: none; }
   .kpi-card-sub { max-width: 100%; }

@@ -185,15 +185,21 @@ function onTabClick(tab) {
 /* ===== 内容区 ===== */
 .app-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 24px;
   background: #F3F4F6;
 }
 
+/* 工作台：由页面内左右栏各自滚动，此处禁止外层再出现滚动条 */
 .app-content--dashboard {
   padding: 0;
-  background: #F3F4F6;
+  background: #f3f4f6;
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .app-content--mobile {

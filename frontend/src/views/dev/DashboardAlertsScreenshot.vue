@@ -1,243 +1,227 @@
-<!-- 开发：无登录预览工作台横幅 + 待处理预警网格。访问 /dev/dashboard-alerts-screenshot -->
+<!-- 开发：无登录预览工作台左右分栏 + 紧凑预警。访问 /dev/dashboard-alerts-screenshot -->
 <template>
-  <div class="shot-page">
-    <header class="shot-toolbar">
-      <div class="shot-toolbar-left">
-        <h1 class="shot-toolbar-title">工作台</h1>
-        <span class="shot-chip">3月17日 周一</span>
-      </div>
-      <a-button type="primary" size="small">新建测评计划</a-button>
-    </header>
-
-    <section class="shot-banner">
-      <div class="shot-banner-inner">
-        <div class="shot-banner-left">
-          <div class="shot-banner-copy">
-            <h2 class="shot-banner-h">下午好，张老师</h2>
-            <p class="shot-banner-sub">
-              今日有 <span class="shot-count">4</span> 项待处理 · 与学校一同守护学生心理健康成长
-            </p>
+  <div class="shot-root">
+    <div class="shot-split">
+      <div class="shot-main">
+        <header class="shot-toolbar">
+          <div class="shot-toolbar-left">
+            <h1 class="shot-toolbar-title">工作台</h1>
+            <span class="shot-chip">3月17日 周一</span>
           </div>
-          <div class="shot-plant" aria-hidden="true">
-            <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="shot-svg-plant">
-              <ellipse cx="60" cy="108" rx="36" ry="8" fill="#C8E6D9" opacity=".6"/>
-              <path d="M48 102c0-28 12-44 28-52-8 16-6 36 4 50" stroke="#2D7A6A" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-              <path d="M72 102c0-24-10-40-24-48 10 14 12 34 6 48" stroke="#3D9B87" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-              <path d="M60 52c10-18 28-24 40-20-14 8-22 24-24 40" fill="#5CB88A"/>
-              <path d="M60 56C50 38 32 32 20 38c14 8 22 26 24 42" fill="#7BC99A"/>
-              <path d="M60 60c-6-22-26-34-44-30 16 10 28 28 32 46" fill="#4AA67E"/>
-              <circle cx="60" cy="48" r="6" fill="#FBBF24" opacity=".35"/>
-            </svg>
-          </div>
-        </div>
-        <div class="shot-campus" aria-hidden="true">
-          <svg viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="shot-svg-campus">
-            <defs>
-              <linearGradient id="shotCampusSky" x1="0" y1="0" x2="200" y2="120" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#B8E0D2"/>
-                <stop offset=".45" stop-color="#E8F5F0"/>
-                <stop offset="1" stop-color="#F0FAF7"/>
-              </linearGradient>
-              <linearGradient id="shotCampusG" x1="100" y1="85" x2="100" y2="120" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#9DCFBF" stop-opacity=".5"/>
-                <stop offset="1" stop-color="#C8E6D9" stop-opacity=".35"/>
-              </linearGradient>
-            </defs>
-            <rect width="200" height="120" rx="12" fill="url(#shotCampusSky)"/>
-            <rect y="78" width="200" height="42" fill="url(#shotCampusG)"/>
-            <path d="M24 78V48h28l8-10 8 10h28v30" stroke="#2D7A6A" stroke-width="2" fill="#fff" fill-opacity=".85"/>
-            <path d="M120 78V52h18l6-8 6 8h18v26" stroke="#24655A" stroke-width="1.8" fill="#fff" fill-opacity=".9"/>
-            <rect x="152" y="58" width="36" height="20" rx="2" fill="#fff" fill-opacity=".7" stroke="#2D7A6A" stroke-width="1.2"/>
-            <circle cx="170" cy="42" r="10" fill="#FDE68A" opacity=".9"/>
-          </svg>
-        </div>
-      </div>
-    </section>
+          <a-button type="primary" size="small">新建测评计划</a-button>
+        </header>
 
-    <section class="shot-kpi">
-      <div v-for="k in kpiDemo" :key="k.label" class="shot-kpi-card" :class="k.cls">
-        <div class="shot-kpi-label">{{ k.label }}</div>
-        <div class="shot-kpi-num">{{ k.num }}</div>
-        <div class="shot-kpi-sub">{{ k.sub }}</div>
-      </div>
-    </section>
-
-    <section class="shot-section">
-      <div class="shot-head">
-        <h2 class="shot-title">待处理预警</h2>
-        <span class="shot-badge">4</span>
-      </div>
-      <div class="alert-grid">
-        <div
-          v-for="a in mockAlerts"
-          :key="a.id"
-          class="alert-tile"
-          :class="a.level === 'red' ? 'alert-tile--red' : 'alert-tile--amber'"
-        >
-          <div class="alert-tile-accent" aria-hidden="true" />
-          <div class="alert-tile-avatar">{{ a.studentName.slice(0, 1) }}</div>
-          <div class="alert-tile-body">
-            <div class="alert-tile-top">
-              <span class="alert-tile-name">{{ a.studentName }}</span>
-              <span class="alert-tile-time-rel">{{ a.timeRel }}</span>
+        <section class="shot-banner">
+          <div class="shot-banner-inner">
+            <div class="shot-banner-left">
+              <div>
+                <h2 class="shot-banner-h">下午好，张老师</h2>
+                <p class="shot-banner-sub">
+                  今日有 <span class="shot-count">4</span> 项待处理 · 与学校一同守护学生心理健康成长
+                </p>
+              </div>
+              <div class="shot-plant" aria-hidden="true">
+                <svg viewBox="0 0 120 120" class="shot-svg-plant" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <ellipse cx="60" cy="108" rx="36" ry="8" fill="#C8E6D9" opacity=".6"/>
+                  <path d="M60 52c10-18 28-24 40-20-14 8-22 24-24 40" fill="#5CB88A"/>
+                  <path d="M60 56C50 38 32 32 20 38c14 8 22 26 24 42" fill="#7BC99A"/>
+                </svg>
+              </div>
             </div>
-            <div class="alert-tile-scoreline">
-              {{ a.scaleName }}（{{ a.score }}/{{ a.totalScore }}）
-            </div>
-            <div class="alert-tile-foot">
-              <span class="alert-tile-time-abs">{{ a.timeAbs }}</span>
-              <button type="button" class="alert-tile-btn" :class="a.level === 'red' ? 'alert-tile-btn--red' : 'alert-tile-btn--amber'">
-                立即处理
-              </button>
+            <div class="shot-campus">
+              <svg viewBox="0 0 200 120" class="shot-svg-campus" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="ssky" x1="0" y1="0" x2="200" y2="120">
+                    <stop stop-color="#B8E0D2"/><stop offset="1" stop-color="#F0FAF7"/>
+                  </linearGradient>
+                </defs>
+                <rect width="200" height="120" rx="12" fill="url(#ssky)"/>
+                <path d="M24 78V48h28l8-10 8 10h28v30" stroke="#2D7A6A" stroke-width="2" fill="#fff" fill-opacity=".85"/>
+              </svg>
             </div>
           </div>
+        </section>
+
+        <div class="shot-kpi">
+          <div v-for="k in kpiDemo" :key="k.label" class="shot-kpi-card" :class="k.cls">
+            <div class="shot-kpi-label">{{ k.label }}</div>
+            <div class="shot-kpi-num">{{ k.num }}</div>
+          </div>
         </div>
+
+        <section class="shot-section">
+          <div class="shot-sec-head">
+            <span class="shot-sec-title">待处理预警</span>
+            <span class="shot-badge">4</span>
+          </div>
+          <div class="alert-list alert-list--compact">
+            <div
+              v-for="a in mockAlerts"
+              :key="a.id"
+              class="alert-row"
+              :class="a.level === 'red' ? 'alert-row--red' : 'alert-row--amber'"
+            >
+              <div class="alert-row-bar" />
+              <div class="alert-row-mid">
+                <span :class="a.level === 'red' ? 'alert-tag--red' : 'alert-tag--amber'">
+                  {{ a.level === 'red' ? '红色预警' : '黄色预警' }}
+                </span>
+                <div class="alert-row-identity">
+                  <span class="alert-row-name">{{ a.studentName }}</span>
+                  <span class="alert-row-class">{{ a.className }}</span>
+                </div>
+                <div class="alert-row-scale-wrap">
+                  <span class="alert-row-scale">{{ a.scaleName }}</span>
+                  <span class="alert-score-green">{{ a.score }}/{{ a.totalScore }}分</span>
+                </div>
+              </div>
+              <div class="alert-row-aside">
+                <span class="alert-row-time">{{ a.timeRel }}</span>
+                <button
+                  type="button"
+                  class="alert-row-action"
+                  :class="a.level === 'red' ? 'alert-row-action--red' : 'alert-row-action--amber'"
+                >
+                  立即处理
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
-    </section>
+
+      <aside class="shot-side" aria-label="右侧栏预览">
+        <section class="shot-side-card">
+          <div class="shot-side-head">待办提醒 <span class="shot-side-n">3</span></div>
+          <ul class="shot-todo">
+            <li>跟进红色预警 · 高一(2)</li>
+            <li>完成个案周报</li>
+            <li>预约家长沟通</li>
+          </ul>
+        </section>
+        <section class="shot-side-card">
+          <div class="shot-side-head">风险趋势（近30天）</div>
+          <div class="shot-chart-placeholder">折线图区域</div>
+        </section>
+      </aside>
+    </div>
   </div>
 </template>
 
 <script setup>
 const kpiDemo = [
-  { label: '本周测评人次', num: '128', sub: '覆盖率约 68%', cls: 'shot-kpi-card--g' },
-  { label: '红色预警', num: '4', sub: '待处理', cls: 'shot-kpi-card--r' },
-  { label: '黄色预警', num: '12', sub: '跟进中', cls: 'shot-kpi-card--a' },
-  { label: '在跟进个案', num: '6', sub: '本月结案 2', cls: 'shot-kpi-card--b' },
+  { label: '本周测评', num: '128', cls: 'shot-kpi--g' },
+  { label: '红色预警', num: '4', cls: 'shot-kpi--r' },
+  { label: '黄色预警', num: '12', cls: 'shot-kpi--a' },
+  { label: '个案', num: '6', cls: 'shot-kpi--b' },
 ]
 
 const mockAlerts = [
-  {
-    id: 1,
-    level: 'red',
-    studentName: '张同学',
-    scaleName: 'PHQ-9 抑郁筛查',
-    score: 22,
-    totalScore: 27,
-    timeRel: '1天前',
-    timeAbs: '3/21 10:16',
-  },
-  {
-    id: 2,
-    level: 'yellow',
-    studentName: '李同学',
-    scaleName: 'GAD-7 焦虑',
-    score: 12,
-    totalScore: 21,
-    timeRel: '昨天 15:20',
-    timeAbs: '3/20 15:20',
-  },
-  {
-    id: 3,
-    level: 'red',
-    studentName: '王同学',
-    scaleName: 'PHQ-9 抑郁筛查',
-    score: 19,
-    totalScore: 27,
-    timeRel: '昨天 09:08',
-    timeAbs: '3/20 09:08',
-  },
-  {
-    id: 4,
-    level: 'yellow',
-    studentName: '赵同学',
-    scaleName: '学习倦怠量表',
-    score: 45,
-    totalScore: 90,
-    timeRel: '3天前',
-    timeAbs: '3/18 14:00',
-  },
+  { id: 1, level: 'red', studentName: '张同学', className: '初三(2)班', scaleName: 'PHQ-9', score: 22, totalScore: 27, timeRel: '1天前' },
+  { id: 2, level: 'yellow', studentName: '李同学', className: '初二(1)班', scaleName: 'GAD-7', score: 12, totalScore: 21, timeRel: '昨天' },
 ]
 </script>
 
 <style scoped>
-.shot-page {
+.shot-root {
   min-height: 100vh;
-  padding: 20px 28px 40px;
   background: #f3f4f6;
   box-sizing: border-box;
-  max-width: 1100px;
-  margin: 0 auto;
 }
-
+.shot-split {
+  display: flex;
+  max-width: 1280px;
+  margin: 0 auto;
+  min-height: calc(100vh - 24px);
+  overflow: hidden;
+  border-radius: 0;
+}
+.shot-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 16px 20px 24px;
+  background: #f3f4f6;
+}
+.shot-side {
+  width: 340px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 16px 14px 24px;
+  background: #f7f8fa;
+  border-left: 1px solid #e5e7eb;
+  box-sizing: border-box;
+}
 .shot-toolbar {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  align-items: center;
+  margin-bottom: 12px;
 }
 .shot-toolbar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 .shot-toolbar-title {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  color: var(--color-text-1);
 }
 .shot-chip {
-  font-size: 12px;
-  padding: 0 10px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  border-radius: 20px;
-  border: 1px solid var(--color-border-2);
-  color: var(--color-text-3);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
   background: #fff;
+  color: var(--color-text-3);
 }
 
 .shot-banner {
-  min-height: 160px;
-  margin-bottom: 16px;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #e8f5f0 0%, #f0faf7 100%);
-  border-radius: 12px;
+  background: linear-gradient(135deg, #e8f5f0, #f0faf7);
   border: 1px solid rgba(45, 122, 106, 0.12);
-  box-sizing: border-box;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
 }
 .shot-banner-inner {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  min-height: 128px;
+  align-items: center;
+  gap: 12px;
 }
 .shot-banner-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
 }
 .shot-banner-h {
-  margin: 0 0 8px;
-  font-size: 20px;
+  margin: 0 0 4px;
+  font-size: 16px;
   font-weight: 700;
-  color: var(--color-text-1);
 }
 .shot-banner-sub {
   margin: 0;
-  font-size: 14px;
+  font-size: 12px;
   color: var(--color-text-3);
 }
 .shot-count {
   display: inline-flex;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
+  min-width: 20px;
+  height: 20px;
   align-items: center;
   justify-content: center;
-  border-radius: 11px;
+  padding: 0 5px;
+  border-radius: 10px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   background: #fff;
   color: var(--color-danger-6);
   border: 1px solid rgba(245, 63, 63, 0.3);
-  margin: 0 2px;
 }
 .shot-plant {
-  width: 100px;
-  height: 100px;
+  width: 64px;
+  height: 64px;
   flex-shrink: 0;
 }
 .shot-svg-plant {
@@ -245,11 +229,10 @@ const mockAlerts = [
   height: 100%;
 }
 .shot-campus {
-  width: 240px;
-  height: 120px;
-  border-radius: 12px;
+  width: 140px;
+  height: 72px;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(15, 29, 25, 0.08);
   flex-shrink: 0;
 }
 .shot-svg-campus {
@@ -261,193 +244,220 @@ const mockAlerts = [
 .shot-kpi {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
-@media (max-width: 900px) {
+@media (max-width: 700px) {
   .shot-kpi {
     grid-template-columns: repeat(2, 1fr);
   }
-  .shot-banner-inner {
-    flex-direction: column;
-    align-items: flex-start;
+  .shot-side {
+    display: none;
   }
-  .shot-campus {
-    width: 100%;
-    max-width: 280px;
+  .shot-split {
+    min-height: auto;
   }
 }
 
 .shot-kpi-card {
   background: #fff;
-  border: 1px solid var(--color-border-2);
-  border-radius: 12px;
-  padding: 14px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 .shot-kpi-label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-text-3);
-  margin-bottom: 8px;
-}
-.shot-kpi-num {
-  font-size: 36px;
-  font-weight: 800;
-  line-height: 1;
   margin-bottom: 4px;
 }
-.shot-kpi-sub {
-  font-size: 11px;
-  color: var(--color-text-4);
+.shot-kpi-num {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
 }
-.shot-kpi-card--g .shot-kpi-num {
+.shot-kpi--g .shot-kpi-num {
   color: var(--color-success-6);
 }
-.shot-kpi-card--r .shot-kpi-num {
+.shot-kpi--r .shot-kpi-num {
   color: var(--color-danger-6);
 }
-.shot-kpi-card--a .shot-kpi-num {
+.shot-kpi--a .shot-kpi-num {
   color: var(--color-warning-6);
 }
-.shot-kpi-card--b .shot-kpi-num {
+.shot-kpi--b .shot-kpi-num {
   color: var(--color-info-6);
 }
 
-.shot-head {
+.shot-section {
+  margin-top: 4px;
+}
+.shot-sec-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 8px;
 }
-.shot-title {
-  margin: 0;
-  font-size: 15px;
+.shot-sec-title {
+  font-size: 13px;
   font-weight: 700;
-  color: var(--color-text-1);
 }
 .shot-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 10px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 8px;
   background: var(--color-danger-light-1);
   color: var(--color-danger-6);
   border: 1px solid var(--color-danger-light-3);
 }
 
-.alert-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-@media (max-width: 700px) {
-  .alert-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.alert-tile {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-  gap: 12px;
-  padding: 12px 14px 12px 0;
+.alert-list--compact {
   background: #fff;
-  border-radius: 12px;
-  border: 1px solid var(--color-border-2);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
   overflow: hidden;
 }
-.alert-tile-accent {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  border-radius: 0 2px 2px 0;
-}
-.alert-tile--red .alert-tile-accent {
-  background: var(--color-danger-6);
-}
-.alert-tile--amber .alert-tile-accent {
-  background: var(--color-warning-6);
-}
-.alert-tile-avatar {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  margin-left: 8px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #e8f5f0, #d1ebe0);
-  border: 1px solid rgba(45, 122, 106, 0.2);
+.alert-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--color-primary-6);
+  min-height: 52px;
+  padding: 6px 10px 6px 0;
+  border-bottom: 1px solid var(--color-bg-2);
 }
-.alert-tile-body {
+.alert-row:last-child {
+  border-bottom: none;
+}
+.alert-row-bar {
+  width: 4px;
+  align-self: stretch;
+  margin-right: 8px;
+  border-radius: 0 2px 2px 0;
+}
+.alert-row--red .alert-row-bar {
+  background: var(--color-danger-6);
+}
+.alert-row--amber .alert-row-bar {
+  background: var(--color-warning-6);
+}
+.alert-row-mid {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
 }
-.alert-tile-top {
+.alert-tag--red,
+.alert-tag--amber {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.alert-tag--red {
+  background: var(--color-danger-light-1);
+  color: var(--color-danger-6);
+}
+.alert-tag--amber {
+  background: var(--color-warning-light-1);
+  color: var(--color-warning-6);
+}
+.alert-row-identity {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
+  gap: 4px;
+  align-items: baseline;
 }
-.alert-tile-name {
-  font-size: 15px;
+.alert-row-name {
   font-weight: 700;
-  color: var(--color-text-1);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.alert-tile-time-rel {
-  font-size: 12px;
-  color: var(--color-text-4);
-  flex-shrink: 0;
-}
-.alert-tile-scoreline {
   font-size: 13px;
-  color: var(--color-text-3);
-  line-height: 1.4;
 }
-.alert-tile-foot {
+.alert-row-class {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-2);
+}
+.alert-row-scale-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.alert-row-scale {
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+.alert-score-green {
+  font-size: 11px;
+  font-weight: 600;
+  color: #047857;
+  background: #d1fae5;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.alert-row-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  padding-left: 6px;
+}
+.alert-row-time {
+  font-size: 10px;
+  color: var(--color-text-4);
+}
+.alert-row-action {
+  height: 26px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+}
+.alert-row-action--red {
+  background: var(--color-danger-6);
+}
+.alert-row-action--amber {
+  background: var(--color-warning-6);
+}
+
+.shot-side-card {
+  background: #fff;
+  border: 1px solid #e8eaed;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.shot-side-head {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  margin-top: 2px;
 }
-.alert-tile-time-abs {
+.shot-side-n {
   font-size: 11px;
-  color: var(--color-text-4);
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: var(--color-text-3);
 }
-.alert-tile-btn {
-  height: 30px;
-  padding: 0 12px;
-  border: none;
-  border-radius: 6px;
+.shot-todo {
+  margin: 0;
+  padding: 0 0 0 16px;
   font-size: 12px;
-  font-weight: 600;
-  color: #fff;
-  cursor: default;
+  color: var(--color-text-2);
+  line-height: 1.8;
 }
-.alert-tile-btn--red {
-  background: var(--color-danger-6);
-}
-.alert-tile-btn--amber {
-  background: var(--color-warning-6);
+.shot-chart-placeholder {
+  height: 100px;
+  background: linear-gradient(180deg, #f9fafb, #f3f4f6);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--color-text-4);
 }
 </style>
