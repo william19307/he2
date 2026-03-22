@@ -17,6 +17,11 @@ export function getWeekStats() {
   return request.get('/dashboard/week-stats')
 }
 
+/** 待办提醒（含 link_type、link_id） */
+export function getDashboardTodos() {
+  return request.get('/dashboard/todos')
+}
+
 export function getAlertTrend(params) {
   return request.get('/dashboard/alert-trend', { params })
 }

@@ -288,19 +288,30 @@
             <h3 class="side-card-title">待办提醒</h3>
             <span class="side-card-count">{{ todoItems.length }}</span>
           </div>
-          <ul class="todo-list">
-            <li v-for="item in todoItems" :key="item.id" class="todo-item">
-              <span
-                class="todo-dot"
-                :class="`todo-dot--${item.dotColor || todoDotColor(item)}`"
-              />
-              <span class="todo-text">{{ item.text }}</span>
-              <span
-                class="todo-time"
-                :class="{ 'todo-time--overdue': item.overdue }"
-              >{{ item.dueTime }}</span>
-            </li>
-          </ul>
+          <a-spin :loading="loadingTodos">
+            <ul class="todo-list">
+              <li
+                v-for="item in todoItems"
+                :key="item.id"
+                class="todo-item"
+                :class="{ 'todo-item--clickable': isTodoNavigable(item) }"
+                role="button"
+                :tabindex="isTodoNavigable(item) ? 0 : -1"
+                @click="handleTodoClick(item)"
+                @keydown.enter.prevent="handleTodoClick(item)"
+              >
+                <span
+                  class="todo-dot"
+                  :class="`todo-dot--${todoDotColor(item)}`"
+                />
+                <span class="todo-text">{{ item.text }}</span>
+                <span
+                  class="todo-time"
+                  :class="{ 'todo-time--overdue': item.overdue }"
+                >{{ item.dueTime }}</span>
+              </li>
+            </ul>
+          </a-spin>
         </section>
 
         <!-- 进行中测评 -->
@@ -364,7 +375,7 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { todoItems } from '@/mock/data'
+import { todoItemsFallback } from '@/mock/data'
 import { useAuthStore } from '@/stores/auth'
 import * as dashboardApi from '@/api/dashboard'
 
@@ -376,9 +387,35 @@ const auth = useAuthStore()
 const kpiHoverDemo = computed(() => route.query.kpiHover === '1')
 
 function todoDotColor(item) {
+  if (item.link_type === 'alert') return 'red'
+  if (item.link_type === 'case') return 'amber'
+  if (item.link_type === 'plan') return 'gray'
   if (item.type === 'alert' || item.priority === 'high') return 'red'
   if (item.type === 'follow' || item.priority === 'medium') return 'amber'
   return 'gray'
+}
+
+function mapTodo(raw) {
+  return {
+    id: raw.id,
+    text: raw.text || '',
+    dueTime: raw.due_time ?? raw.dueTime ?? '',
+    overdue: !!raw.overdue,
+    link_type: raw.link_type,
+    link_id: raw.link_id != null ? Number(raw.link_id) : null,
+  }
+}
+
+function isTodoNavigable(item) {
+  return !!(item?.link_type && item.link_id != null && !Number.isNaN(item.link_id))
+}
+
+function handleTodoClick(item) {
+  if (!isTodoNavigable(item)) return
+  const id = item.link_id
+  if (item.link_type === 'alert') router.push(`/alerts/${id}`)
+  else if (item.link_type === 'case') router.push(`/cases/${id}`)
+  else if (item.link_type === 'plan') router.push(`/plans/${id}`)
 }
 
 function buildSpark7(endVal) {
@@ -449,6 +486,9 @@ const trendRedSum = computed(() => trendRed.value.reduce((a, b) => a + b, 0))
 const trendYellowSum = computed(() => trendYellow.value.reduce((a, b) => a + b, 0))
 const trendCanvasRef = ref(null)
 const trendWrapRef = ref(null)
+
+const todoItems = ref([])
+const loadingTodos = ref(true)
 
 function formatAlertTime(iso) {
   if (!iso) return ''
@@ -590,9 +630,22 @@ async function loadTrend() {
   } finally { loadingTrend.value = false }
 }
 
+async function loadTodos() {
+  loadingTodos.value = true
+  try {
+    const res = await dashboardApi.getDashboardTodos()
+    const list = res.data?.list || []
+    todoItems.value = list.map(mapTodo)
+  } catch {
+    todoItems.value = todoItemsFallback.map(mapTodo)
+  } finally {
+    loadingTodos.value = false
+  }
+}
+
 let pollTimer = null
 onMounted(async () => {
-  await Promise.all([loadOverview(), loadAlerts(), loadPlans(), loadWeek(), loadTrend()])
+  await Promise.all([loadOverview(), loadAlerts(), loadPlans(), loadWeek(), loadTrend(), loadTodos()])
   pollTimer = setInterval(loadAlerts, 60_000)
   await nextTick()
   if (trendWrapRef.value) {
@@ -1439,6 +1492,15 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   border-bottom: 1px solid var(--color-bg-2);
 }
 .todo-item:last-child { border-bottom: none; }
+
+.todo-item--clickable {
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+.todo-item--clickable:hover {
+  background: #f5f5f5;
+}
 
 .todo-dot {
   width: 7px;

@@ -102,13 +102,13 @@ export const alertList = [
   },
 ]
 
-export const todoItems = [
-  { id: 1, type: 'alert', dotColor: 'red', text: '李梦瑶红色预警未处置', priority: 'high', dueTime: '今天 17:00', overdue: false },
-  { id: 2, type: 'alert', dotColor: 'red', text: '赵子轩红色预警未处置', priority: 'high', dueTime: '今天 18:00', overdue: false },
-  { id: 3, type: 'follow', dotColor: 'yellow', text: '陈小雨黄色预警跟进超3天', priority: 'medium', dueTime: '已超期', overdue: true },
-  { id: 4, type: 'session', dotColor: 'gray', text: '与李明浩第6次会谈（今天14:00）', priority: 'normal', dueTime: '今天 14:00', overdue: false },
-  { id: 5, type: 'plan', dotColor: 'gray', text: '2025春季心理普测即将截止', priority: 'normal', dueTime: '2025-03-20', overdue: false },
-  { id: 6, type: 'call', dotColor: 'gray', text: '回访李梦瑶家长（计划：本周三）', priority: 'normal', dueTime: '2025-03-19', overdue: false },
+/** 工作台待办回退数据（与 GET /dashboard/todos 字段对齐） */
+export const todoItemsFallback = [
+  { id: 'fb-1', text: '李梦瑶红色预警未处置', due_time: '今天 17:00', link_type: 'alert', link_id: 1, overdue: false },
+  { id: 'fb-2', text: '赵子轩红色预警未处置', due_time: '今天 18:00', link_type: 'alert', link_id: 2, overdue: false },
+  { id: 'fb-3', text: '陈小雨黄色预警跟进超3天', due_time: '已超期', link_type: 'alert', link_id: 3, overdue: true },
+  { id: 'fb-4', text: '个案：李明浩', due_time: '—', link_type: 'case', link_id: 1, overdue: false },
+  { id: 'fb-5', text: '测评计划：2025春季心理普测', due_time: '2025-03-20', link_type: 'plan', link_id: 1, overdue: false },
 ]
 
 export const weeklyStats = {
