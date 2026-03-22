@@ -100,6 +100,25 @@
           </ul>
         </section>
         <section class="shot-side-card">
+          <div class="shot-side-head shot-side-head--row">
+            <span>进行中测评</span>
+            <span class="shot-link">新建 ›</span>
+          </div>
+          <div v-for="p in planDemo" :key="p.name" class="shot-plan">
+            <div class="shot-plan-title">{{ p.name }}</div>
+            <div class="shot-plan-bar-wrap">
+              <div class="shot-plan-bar">
+                <div class="shot-plan-fill" :style="{ width: p.pct + '%' }" />
+              </div>
+              <span class="shot-plan-num">{{ p.done }}/{{ p.total }}</span>
+            </div>
+            <div class="shot-plan-foot">
+              <span>截止 {{ p.end }}</span>
+              <span class="shot-plan-pct">{{ p.pct }}%</span>
+            </div>
+          </div>
+        </section>
+        <section class="shot-side-card">
           <div class="shot-side-head">风险趋势（近30天）</div>
           <div class="shot-chart-placeholder">折线图区域</div>
         </section>
@@ -119,6 +138,11 @@ const kpiDemo = [
 const mockAlerts = [
   { id: 1, level: 'red', studentName: '张同学', className: '初三(2)班', scaleName: 'PHQ-9', score: 22, totalScore: 27, timeRel: '1天前' },
   { id: 2, level: 'yellow', studentName: '李同学', className: '初二(1)班', scaleName: 'GAD-7', score: 12, totalScore: 21, timeRel: '昨天' },
+]
+
+const planDemo = [
+  { name: '2025春季心理健康普查', done: 120, total: 200, pct: 60, end: '4/30' },
+  { name: '初三考前情绪测评', done: 45, total: 48, pct: 94, end: '3/25' },
 ]
 </script>
 
@@ -449,6 +473,59 @@ const mockAlerts = [
   font-size: 12px;
   color: var(--color-text-2);
   line-height: 1.8;
+}
+.shot-link {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-primary-6);
+}
+.shot-plan {
+  padding: 10px 0;
+  border-top: 1px solid #f0f0f0;
+}
+.shot-plan:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+.shot-plan-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-1);
+  margin-bottom: 6px;
+  line-height: 1.35;
+}
+.shot-plan-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.shot-plan-bar {
+  flex: 1;
+  height: 5px;
+  background: #eef2f6;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.shot-plan-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2d7a6a, #4a9d8c);
+  border-radius: 3px;
+}
+.shot-plan-num {
+  font-size: 11px;
+  color: var(--color-text-4);
+  white-space: nowrap;
+}
+.shot-plan-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--color-text-4);
+}
+.shot-plan-pct {
+  font-weight: 700;
+  color: var(--color-primary-6);
 }
 .shot-chart-placeholder {
   height: 100px;

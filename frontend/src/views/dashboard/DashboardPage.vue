@@ -306,49 +306,10 @@
             </div>
           </a-spin>
         </section>
-
-        <!-- 进行中测评 -->
-        <section class="dash-section">
-          <div class="section-head">
-            <div class="section-head-left">
-              <h2 class="section-title">进行中测评</h2>
-            </div>
-            <a class="section-more" @click="router.push('/plans/create')">
-              新建
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M4.5 2.5L8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </a>
-          </div>
-          <a-spin :loading="loadingPlans">
-            <div v-if="!assessmentPlans.length" class="section-empty">
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="#D1D5DB" stroke-width="1.5"/><path d="M10 16h12M16 10v12" stroke="#D1D5DB" stroke-width="2" stroke-linecap="round"/></svg>
-              <span>暂无进行中的测评</span>
-            </div>
-            <div v-else class="plan-list">
-              <div v-for="plan in assessmentPlans" :key="plan.id" class="plan-item">
-                <div class="plan-item-head">
-                  <span class="plan-item-name">{{ plan.name }}</span>
-                  <span v-if="plan.urgent" class="plan-urgent">即将截止</span>
-                </div>
-                <div class="plan-progress-wrap">
-                  <div class="plan-progress-bar">
-                    <div class="plan-progress-fill" :style="{ width: plan.progress + '%' }" />
-                  </div>
-                  <span class="plan-progress-text">{{ plan.completed }}/{{ plan.total }}</span>
-                </div>
-                <div class="plan-item-foot">
-                  <span class="plan-deadline">截止 {{ plan.deadline }}</span>
-                  <span class="plan-percent">{{ plan.progress }}%</span>
-                </div>
-              </div>
-            </div>
-          </a-spin>
-        </section>
       </div>
 
       <!-- 右侧固定栏：独立纵向滚动 -->
-      <aside class="dash-side-scroll" aria-label="待办与趋势">
+      <aside class="dash-side-scroll" aria-label="待办、进行中测评与趋势">
         <!-- 待办提醒 -->
         <section class="side-card">
           <div class="side-card-head">
@@ -368,6 +329,42 @@
               >{{ item.dueTime }}</span>
             </li>
           </ul>
+        </section>
+
+        <!-- 进行中测评 -->
+        <section class="side-card side-card--plans">
+          <div class="side-card-head">
+            <h3 class="side-card-title">进行中测评</h3>
+            <a class="side-card-more" @click="router.push('/plans/create')">
+              新建
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M4.5 2.5L8 6l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </div>
+          <a-spin :loading="loadingPlans">
+            <div v-if="!assessmentPlans.length" class="side-empty">
+              <span>暂无进行中的测评</span>
+            </div>
+            <div v-else class="plan-list plan-list--side">
+              <div v-for="plan in assessmentPlans" :key="plan.id" class="plan-item">
+                <div class="plan-item-head">
+                  <span class="plan-item-name">{{ plan.name }}</span>
+                  <span v-if="plan.urgent" class="plan-urgent">即将截止</span>
+                </div>
+                <div class="plan-progress-wrap">
+                  <div class="plan-progress-bar">
+                    <div class="plan-progress-fill" :style="{ width: plan.progress + '%' }" />
+                  </div>
+                  <span class="plan-progress-text">{{ plan.completed }}/{{ plan.total }}</span>
+                </div>
+                <div class="plan-item-foot">
+                  <span class="plan-deadline">截止 {{ plan.deadline }}</span>
+                  <span class="plan-percent">{{ plan.progress }}%</span>
+                </div>
+              </div>
+            </div>
+          </a-spin>
         </section>
 
         <!-- 风险趋势图 -->
@@ -1416,6 +1413,49 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   background: var(--color-bg-1);
   color: var(--c2);
   border: 1px solid var(--border);
+}
+
+.side-card-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12.5px;
+  color: var(--color-primary-5);
+  cursor: pointer;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.side-card-more:hover {
+  opacity: 0.8;
+}
+
+.side-card--plans .side-card-head {
+  margin-bottom: 8px;
+}
+
+.side-empty {
+  padding: 12px 4px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--c3);
+}
+
+.plan-list--side {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.plan-list--side .plan-item {
+  padding: 12px 0;
+}
+.plan-list--side .plan-item:first-child {
+  padding-top: 0;
+}
+
+.plan-list--side .plan-item-name {
+  word-break: break-word;
+  line-height: 1.35;
 }
 
 /* ===== 待办 ===== */
