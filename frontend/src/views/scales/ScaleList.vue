@@ -42,42 +42,81 @@
         >
           已按学段筛选，部分量表不适用当前学段已隐藏
         </a-alert>
-        <a-table
-          :data="scales"
-          :loading="loading"
-          :pagination="pagination"
-          row-key="id"
-          @page-change="(p) => { pagination.current = p; loadScales() }"
-        >
-          <template #columns>
-            <a-table-column title="量表" :width="200">
-              <template #cell="{ record }">
-                <a-link @click="$router.push(`/scales/${record.id}`)">
-                  {{ record.shortName || record.name }}
-                </a-link>
-              </template>
-            </a-table-column>
-            <a-table-column title="全称" data-index="name" ellipsis />
-            <a-table-column title="分类" :width="100">
-              <template #cell="{ record }">{{ record.category?.name }}</template>
-            </a-table-column>
-            <a-table-column title="题数" data-index="questionCount" :width="70" />
-            <a-table-column title="操作" :width="80">
-              <template #cell="{ record }">
-                <a-link @click="$router.push(`/scales/${record.id}`)">详情</a-link>
-              </template>
-            </a-table-column>
-          </template>
-        </a-table>
+
+        <div class="scale-grid-wrap">
+          <!-- loading 时勿往 spin 里塞空网格，否则 Arco Spin 可能只显示遮罩导致「一片空白」 -->
+          <a-spin :loading="loading" class="scale-spin" style="width: 100%; min-height: 240px">
+            <template v-if="!loading">
+              <a-empty v-if="!scales.length" description="暂无量表" />
+              <div v-else class="scale-card-grid">
+              <div
+                v-for="record in scales"
+                :key="String(record.id)"
+                class="scale-card"
+                role="button"
+                tabindex="0"
+                @click="goDetail(record)"
+                @keydown.enter="goDetail(record)"
+              >
+                <div class="card-top">
+                  <span class="abbr">{{ record.shortName || record.short_name || record.name }}</span>
+                  <a-tag v-if="record.category?.name" size="small" class="cat-tag" color="arcoblue">
+                    {{ record.category.name }}
+                  </a-tag>
+                </div>
+                <div class="card-mid">
+                  <div class="full-name">{{ record.name }}</div>
+                  <div v-if="applicableLevels(record).length" class="level-tags">
+                    <span
+                      v-for="lv in applicableLevels(record)"
+                      :key="lv"
+                      class="level-pill"
+                      :class="`level-pill--${lv}`"
+                    >
+                      {{ levelLabel(lv) }}
+                    </span>
+                  </div>
+                  <div class="q-count">
+                    {{ record.questionCount ?? record.question_count ?? 0 }} 道题
+                  </div>
+                </div>
+                <div class="card-divider" />
+                <div class="card-bottom">
+                  <span class="usage-tag">
+                    已使用 {{ usageCount(record) }} 次
+                  </span>
+                  <a-button type="primary" size="small" @click.stop="goDetail(record)">
+                    查看详情
+                  </a-button>
+                </div>
+              </div>
+              </div>
+            </template>
+          </a-spin>
+
+          <div v-if="pagination.total > 0" class="scale-pager">
+            <a-pagination
+              v-model:current="pagination.current"
+              v-model:page-size="pagination.pageSize"
+              :total="pagination.total"
+              show-total
+              show-page-size
+              @change="loadScales"
+              @page-size-change="onPageSizeChange"
+            />
+          </div>
+        </div>
       </a-col>
     </a-row>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onActivated } from 'vue'
+import { useRouter } from 'vue-router'
 import request from '@/utils/request'
 
+const router = useRouter()
 const categories = ref([])
 const scales = ref([])
 const loading = ref(false)
@@ -85,6 +124,31 @@ const activeCat = ref('all')
 const keyword = ref('')
 const levelFilter = ref(undefined)
 const pagination = reactive({ current: 1, pageSize: 20, total: 0, showTotal: true })
+
+function applicableLevels(record) {
+  const raw = record.applicableLevels ?? record.applicable_levels
+  if (!Array.isArray(raw)) return []
+  return [...new Set(raw.map((x) => Number(x)).filter((n) => [1, 2, 3].includes(n)))].sort(
+    (a, b) => a - b
+  )
+}
+
+function levelLabel(lv) {
+  const m = { 1: '小学', 2: '初中', 3: '高中' }
+  return m[lv] || ''
+}
+
+function usageCount(record) {
+  const u = record.usage_count
+  if (u != null && u !== '') return Number(u) || 0
+  const v = record.view_count ?? record.viewCount
+  if (v != null && v !== '') return Number(v) || 0
+  return 0
+}
+
+function goDetail(record) {
+  router.push(`/scales/${record.id}`)
+}
 
 async function loadCategories() {
   try {
@@ -105,6 +169,11 @@ function onSearchKeyword() {
   loadScales()
 }
 
+function onPageSizeChange() {
+  pagination.current = 1
+  loadScales()
+}
+
 async function loadScales() {
   loading.value = true
   try {
@@ -118,9 +187,15 @@ async function loadScales() {
       params.level = levelFilter.value
     }
     const res = await request.get('/scales', { params })
-    const list = res.data?.list || []
+    const payload = res.data
+    const list = Array.isArray(payload?.list)
+      ? payload.list
+      : Array.isArray(payload)
+        ? payload
+        : []
     scales.value = list
-    pagination.total = res.data?.pagination?.total ?? res.data?.total ?? list.length
+    pagination.total =
+      payload?.pagination?.total ?? payload?.total ?? list.length
   } catch {
     scales.value = []
   } finally {
@@ -130,6 +205,11 @@ async function loadScales() {
 
 onMounted(async () => {
   await loadCategories()
+  loadScales()
+})
+
+/** 从详情页返回时若列表被 KeepAlive 缓存，需重新拉取数据 */
+onActivated(() => {
   loadScales()
 })
 </script>
@@ -145,5 +225,127 @@ onMounted(async () => {
 }
 .level-filter-tip {
   margin-bottom: 12px;
+}
+
+.scale-grid-wrap {
+  padding: 24px;
+  background: var(--gray-50, #f9fafb);
+  border-radius: 8px;
+  min-height: 320px;
+}
+.scale-spin {
+  width: 100%;
+  min-height: 200px;
+}
+.scale-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.scale-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 0.5px solid var(--gray-200, #e5e7eb);
+  padding: 16px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+}
+.scale-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.abbr {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-primary-5, #2d7a6a);
+  line-height: 1.3;
+  word-break: break-all;
+}
+.cat-tag {
+  flex-shrink: 0;
+}
+
+.card-mid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.full-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--gray-800, #1f2937);
+  line-height: 1.4;
+  word-break: break-word;
+}
+.level-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.level-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.level-pill--1 {
+  background: #ecfdf5;
+  color: #047857;
+}
+.level-pill--2 {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.level-pill--3 {
+  background: #faf5ff;
+  color: #7c3aed;
+}
+.q-count {
+  font-size: 12px;
+  color: var(--gray-500, #6b7280);
+}
+
+.card-divider {
+  height: 0.5px;
+  background: var(--gray-200, #e5e7eb);
+  margin: 12px 0;
+}
+
+.card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.usage-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--color-primary-1, #edf7f4);
+  color: var(--color-primary-6, #24655a);
+  border: 1px solid var(--color-primary-3, #a3d9cd);
+}
+
+.scale-pager {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 8px;
 }
 </style>
