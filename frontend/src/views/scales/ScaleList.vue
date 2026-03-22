@@ -214,9 +214,8 @@ onMounted(async () => {
 })
 
 /**
- * 列表数据加载：项目未对路由页做 KeepAlive，onActivated 不会在「详情→返回」时触发。
- * 真正问题来自 MainLayout 的 <transition mode="out-in"> 未给页面组件加 :key，
- * 与列表里 loading+空插槽组合时易出现空白。此处用 watch 保证进入 /scales 必拉列表。
+ * 列表数据加载：未对路由页做 KeepAlive，onActivated 不会在「详情→返回」时触发；
+ * 用 watch 保证进入 /scales 时必拉列表（与 MainLayout 路由过渡修复配合）。
  */
 watch(
   () => route.path,

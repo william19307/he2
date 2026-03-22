@@ -37,6 +37,33 @@ router.get('/categories', authorize('teacher'), async (_req, res, next) => {
 /** 学段：1 小学 2 初中 3 高中；与 applicable_levels JSON 数组一致 */
 const LEVEL_VALUES = [1, 2, 3];
 
+/**
+ * 统计当前租户下，各量表出现在多少条测评计划（assessment_plans.scale_ids）中
+ */
+async function getScaleUsageCountsByPlan(tenantId, scaleIds) {
+  const usage = new Map();
+  if (!tenantId || !scaleIds?.length) {
+    for (const id of scaleIds || []) usage.set(Number(id), 0);
+    return usage;
+  }
+  const idSet = new Set(scaleIds.map((x) => Number(x)));
+  for (const id of idSet) usage.set(id, 0);
+
+  const plans = await prisma.assessmentPlan.findMany({
+    where: { tenantId },
+    select: { scaleIds: true },
+  });
+  for (const p of plans) {
+    const sids = Array.isArray(p.scaleIds) ? p.scaleIds.map((x) => Number(x)) : [];
+    for (const sid of sids) {
+      if (idSet.has(sid)) {
+        usage.set(sid, (usage.get(sid) || 0) + 1);
+      }
+    }
+  }
+  return usage;
+}
+
 router.get('/', authorize('teacher'), async (req, res, next) => {
   try {
     const { category_id, is_active, page = 1, page_size = 20, keyword, level } = req.query;
@@ -77,7 +104,15 @@ router.get('/', authorize('teacher'), async (req, res, next) => {
       }),
       prisma.scale.count({ where }),
     ]);
-    paginate(res, { list, total, page: Number(page), pageSize: Number(page_size) });
+
+    const scaleIdsOnPage = list.map((s) => s.id);
+    const usageMap = await getScaleUsageCountsByPlan(req.tenantId, scaleIdsOnPage);
+    const listOut = list.map((s) => ({
+      ...s,
+      usage_count: usageMap.get(Number(s.id)) ?? 0,
+    }));
+
+    paginate(res, { list: listOut, total, page: Number(page), pageSize: Number(page_size) });
   } catch (err) {
     next(err);
   }

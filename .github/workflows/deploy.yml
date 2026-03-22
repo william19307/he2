@@ -1,9 +1,12 @@
+# 推送 main 或 dev 时触发；服务器会检出并拉取「本次推送所在分支」。
+# 若生产环境只想随 main 更新，请把 branches 改成仅 main，并始终在发布前合并到 main。
 name: 自动部署到生产环境
 
 on:
   push:
     branches:
       - main
+      - dev
 
 jobs:
   deploy:
@@ -16,11 +19,15 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
+            set -e
+            BRANCH="${{ github.ref_name }}"
             cd /opt/he2
-            git pull origin main
+            git fetch origin
+            git checkout "$BRANCH"
+            git pull --ff-only origin "$BRANCH"
             cd frontend
-            npm install
+            npm ci || npm install
             npm run build
             cd ..
             docker compose up -d --build
-            echo "部署完成"
+            echo "部署完成 branch=$BRANCH"

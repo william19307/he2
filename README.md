@@ -55,7 +55,9 @@ npm run dev       # http://localhost:5173
 ## 分支
 
 - **`main`**：主分支  
-- **`dev`**：日常开发与合并
+- **`dev`**：日常开发与合并  
+
+**自动部署**（`.github/workflows/deploy.yml`）：向 **`main` 或 `dev` 推送**会 SSH 到服务器，**检出并拉取同名分支**后构建前端并 `docker compose up`。若希望生产环境只跟 `main` 走，请合并进 `main` 再推送，或自行改 workflow 的 `branches`。
 
 ---
 
