@@ -1,30 +1,74 @@
 <template>
   <div class="dash">
-    <!-- 页头 -->
-    <header class="dash-header">
-      <div class="dash-header-left">
-        <div class="dash-greeting-row">
-          <h1 class="dash-title">工作台</h1>
-          <span class="dash-date-chip">{{ todayDate }}</span>
-        </div>
-        <p class="dash-greeting">
-          {{ timeGreeting }}，<strong>{{ displayName }}</strong> 老师 · 今日有
-          <span class="greeting-count" :class="pendingTotal > 0 ? 'greeting-count--warn' : ''">
-            {{ pendingTotal }}
-          </span> 项待处理
-        </p>
+    <!-- 顶栏：标题 + 操作 -->
+    <header class="dash-toolbar">
+      <div class="dash-toolbar-left">
+        <h1 class="dash-toolbar-title">工作台</h1>
+        <span class="dash-date-chip">{{ todayDate }}</span>
       </div>
-      <div class="dash-header-actions">
-        <a-button class="btn-new-plan" type="primary" @click="router.push('/plans/create')">
-          <template #icon>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </template>
-          新建测评计划
-        </a-button>
-      </div>
+      <a-button class="btn-new-plan" type="primary" @click="router.push('/plans/create')">
+        <template #icon>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </template>
+        新建测评计划
+      </a-button>
     </header>
+
+    <!-- 欢迎横幅 -->
+    <section class="dash-welcome-banner" aria-label="欢迎">
+      <div class="dash-welcome-inner">
+        <div class="dash-welcome-left">
+          <div class="dash-welcome-copy">
+            <h2 class="dash-welcome-heading">{{ timeGreeting }}，{{ displayName }}老师</h2>
+            <p class="dash-welcome-sub">
+              今日有
+              <span class="dash-welcome-count" :class="{ 'dash-welcome-count--warn': pendingTotal > 0 }">{{ pendingTotal }}</span>
+              项待处理 · 与学校一同守护学生心理健康成长
+            </p>
+          </div>
+          <!-- 绿色植物 / 成长主题插画 -->
+          <div class="dash-welcome-illust dash-welcome-illust--plant" aria-hidden="true">
+            <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="dash-svg-plant">
+              <ellipse cx="60" cy="108" rx="36" ry="8" fill="#C8E6D9" opacity=".6"/>
+              <path d="M48 102c0-28 12-44 28-52-8 16-6 36 4 50" stroke="#2D7A6A" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+              <path d="M72 102c0-24-10-40-24-48 10 14 12 34 6 48" stroke="#3D9B87" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+              <path d="M60 52c10-18 28-24 40-20-14 8-22 24-24 40" fill="#5CB88A"/>
+              <path d="M60 56C50 38 32 32 20 38c14 8 22 26 24 42" fill="#7BC99A"/>
+              <path d="M60 60c-6-22-26-34-44-30 16 10 28 28 32 46" fill="#4AA67E"/>
+              <circle cx="60" cy="48" r="6" fill="#FBBF24" opacity=".35"/>
+            </svg>
+          </div>
+        </div>
+        <div class="dash-welcome-art" aria-hidden="true">
+          <!-- 校园氛围：渐变 + 抽象建筑与书本（非照片） -->
+          <svg viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="dash-svg-campus">
+            <defs>
+              <linearGradient id="campusSky" x1="0" y1="0" x2="200" y2="120" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#B8E0D2"/>
+                <stop offset=".45" stop-color="#E8F5F0"/>
+                <stop offset="1" stop-color="#F0FAF7"/>
+              </linearGradient>
+              <linearGradient id="campusGround" x1="100" y1="85" x2="100" y2="120" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#9DCFBF" stop-opacity=".5"/>
+                <stop offset="1" stop-color="#C8E6D9" stop-opacity=".35"/>
+              </linearGradient>
+            </defs>
+            <rect width="200" height="120" rx="12" fill="url(#campusSky)"/>
+            <rect y="78" width="200" height="42" fill="url(#campusGround)"/>
+            <path d="M24 78V48h28l8-10 8 10h28v30" stroke="#2D7A6A" stroke-width="2" fill="#fff" fill-opacity=".85"/>
+            <path d="M120 78V52h18l6-8 6 8h18v26" stroke="#24655A" stroke-width="1.8" fill="#fff" fill-opacity=".9"/>
+            <rect x="152" y="58" width="36" height="20" rx="2" fill="#fff" fill-opacity=".7" stroke="#2D7A6A" stroke-width="1.2"/>
+            <path d="M158 64h24M158 68h18" stroke="#2D7A6A" stroke-width="1" opacity=".5"/>
+            <circle cx="170" cy="42" r="10" fill="#FDE68A" opacity=".9"/>
+            <circle cx="48" cy="36" r="3" fill="#fff" opacity=".8"/>
+            <circle cx="62" cy="30" r="2" fill="#fff" opacity=".6"/>
+            <ellipse cx="100" cy="92" rx="40" ry="6" fill="#2D7A6A" opacity=".12"/>
+          </svg>
+        </div>
+      </div>
+    </section>
 
     <!-- KPI 卡片行 -->
     <a-spin :loading="loadingOverview" class="kpi-row-spin">
@@ -227,37 +271,39 @@
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="#D1D5DB" stroke-width="1.5"/><path d="M16 10v6M16 20v1" stroke="#D1D5DB" stroke-width="2" stroke-linecap="round"/></svg>
               <span>暂无待处理预警</span>
             </div>
-            <div v-else class="alert-list alert-list--compact">
+            <div v-else class="alert-grid">
               <div
                 v-for="alert in displayAlerts"
                 :key="alert.id"
-                class="alert-row"
-                :class="alert.level === 'red' ? 'alert-row--red' : 'alert-row--amber'"
+                class="alert-tile"
+                :class="alert.level === 'red' ? 'alert-tile--red' : 'alert-tile--amber'"
               >
-                <div class="alert-row-bar" aria-hidden="true" />
-                <div class="alert-row-mid">
-                  <span :class="alert.level === 'red' ? 'alert-tag--red' : 'alert-tag--amber'">
-                    {{ alert.level === 'red' ? '红色预警' : '黄色预警' }}
-                  </span>
-                  <div class="alert-row-identity">
-                    <span class="alert-row-name">{{ alert.studentName }}</span>
-                    <span class="alert-row-class">{{ alert.className }}</span>
-                  </div>
-                  <div class="alert-row-scale-wrap">
-                    <span class="alert-row-scale">{{ alert.scaleName }}</span>
-                    <span v-if="alert.score != null" class="alert-score-green">{{ alert.score }}/{{ alert.totalScore }}分</span>
-                  </div>
+                <div class="alert-tile-accent" aria-hidden="true" />
+                <div class="alert-tile-avatar" :title="alert.studentName">
+                  {{ studentInitial(alert.studentName) }}
                 </div>
-                <div class="alert-row-aside">
-                  <span class="alert-row-time">{{ alert.timeAgo || alert.triggerTime }}</span>
-                  <button
-                    type="button"
-                    class="alert-row-action"
-                    :class="alert.level === 'red' ? 'alert-row-action--red' : 'alert-row-action--amber'"
-                    @click="router.push(`/alerts/${alert.id}`)"
-                  >
-                    {{ alert.status === 'pending' ? '立即处理' : '查看详情' }}
-                  </button>
+                <div class="alert-tile-body">
+                  <div class="alert-tile-top">
+                    <span class="alert-tile-name">{{ alert.studentName }}</span>
+                    <span class="alert-tile-time-rel">{{ alert.timeAgo || '—' }}</span>
+                  </div>
+                  <div class="alert-tile-scoreline">
+                    {{ alert.scaleName }}
+                    <template v-if="alert.score != null">
+                      （{{ alert.score }}/{{ alert.totalScore }}）
+                    </template>
+                  </div>
+                  <div class="alert-tile-foot">
+                    <span class="alert-tile-time-abs">{{ alert.triggerTime }}</span>
+                    <button
+                      type="button"
+                      class="alert-tile-btn"
+                      :class="alert.level === 'red' ? 'alert-tile-btn--red' : 'alert-tile-btn--amber'"
+                      @click="router.push(`/alerts/${alert.id}`)"
+                    >
+                      {{ alert.status === 'pending' ? '立即处理' : '查看详情' }}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -367,6 +413,13 @@ function todoDotColor(item) {
   if (item.type === 'alert' || item.priority === 'high') return 'red'
   if (item.type === 'follow' || item.priority === 'medium') return 'amber'
   return 'gray'
+}
+
+/** 头像占位圆内文字：取姓名首字 */
+function studentInitial(name) {
+  const s = (name || '').trim()
+  if (!s.length) return '?'
+  return s[0]
 }
 
 function buildSpark7(endVal) {
@@ -616,23 +669,22 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   box-sizing: border-box;
 }
 
-/* ========== 页头 ========== */
-.dash-header {
+/* ========== 顶栏 + 欢迎横幅 ========== */
+.dash-toolbar {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   gap: 16px;
 }
 
-.dash-greeting-row {
+.dash-toolbar-left {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 6px;
 }
 
-.dash-title {
+.dash-toolbar-title {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
@@ -653,40 +705,121 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   font-weight: 500;
 }
 
-.dash-greeting {
+.dash-welcome-banner {
+  min-height: 160px;
+  margin: 0 -28px 20px;
+  padding: 0 28px;
+  background: linear-gradient(135deg, #e8f5f0 0%, #f0faf7 100%);
+  border-bottom: 1px solid rgba(45, 122, 106, 0.12);
+  box-sizing: border-box;
+}
+
+.dash-welcome-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 160px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 0;
+}
+
+.dash-welcome-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1;
+}
+
+.dash-welcome-copy {
+  min-width: 0;
+}
+
+.dash-welcome-heading {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--c1);
+  line-height: 1.35;
+}
+
+.dash-welcome-sub {
   margin: 0;
   font-size: 14px;
   color: var(--c2);
+  line-height: 1.55;
 }
 
-.dash-greeting strong {
-  color: var(--c1);
-  font-weight: 600;
-}
-
-.greeting-count {
+.dash-welcome-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 10px;
-  font-size: 12px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  margin: 0 2px;
+  border-radius: 11px;
+  font-size: 13px;
   font-weight: 700;
-  background: var(--color-bg-1);
-  color: var(--c2);
-  border: 1px solid var(--border);
+  background: var(--color-bg-white);
+  color: var(--color-primary-6);
+  border: 1px solid rgba(45, 122, 106, 0.25);
   vertical-align: middle;
 }
 
-.greeting-count--warn {
+.dash-welcome-count--warn {
   background: var(--alert-red-bg);
   border-color: var(--alert-red-border);
   color: var(--color-danger-6);
 }
 
-.dash-header-actions { flex-shrink: 0; }
+.dash-welcome-illust {
+  flex-shrink: 0;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dash-svg-plant {
+  width: 100%;
+  height: 100%;
+}
+
+.dash-welcome-art {
+  flex-shrink: 0;
+  width: min(240px, 38vw);
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(15, 29, 25, 0.08);
+}
+
+.dash-svg-campus {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .dash-welcome-banner {
+    margin: 0 -16px 16px;
+    padding: 0 16px;
+  }
+  .dash-welcome-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: auto;
+    padding: 12px 0;
+  }
+  .dash-welcome-art {
+    width: 100%;
+    max-width: 280px;
+  }
+}
 
 .btn-new-plan {
   height: 36px !important;
@@ -720,6 +853,7 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   position: relative;
   overflow: hidden;
   transition: box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
 }
 
 /* 可点击 KPI：手型、上移、右上角箭头 */
@@ -804,10 +938,22 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   font-family: 'DIN Alternate', 'Helvetica Neue', 'Arial Narrow', sans-serif;
   font-size: 38px;
   font-weight: 800;
-  color: var(--c1);
   line-height: 1;
   letter-spacing: -0.03em;
   margin-bottom: 4px;
+}
+
+.kpi-card--green .kpi-card-num {
+  color: var(--color-success-6);
+}
+.kpi-card--red .kpi-card-num {
+  color: var(--color-danger-6);
+}
+.kpi-card--amber .kpi-card-num {
+  color: var(--color-warning-6);
+}
+.kpi-card--blue .kpi-card-num {
+  color: var(--color-info-6);
 }
 
 .kpi-card-sub {
@@ -963,176 +1109,147 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   border-radius: var(--radius);
 }
 
-/* ========== 待处理预警 · 紧凑列表（约 60px/行）========== */
-.alert-list--compact {
+/* ========== 待处理预警 · 两列网格卡片 ========== */
+.alert-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .alert-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.alert-tile {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 12px 14px 12px 0;
   background: var(--bg-card);
   border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  transition: box-shadow 0.18s, transform 0.18s;
   overflow: hidden;
 }
 
-.alert-row {
-  display: flex;
-  align-items: center;
-  min-height: 60px;
-  padding: 8px 12px 8px 0;
-  gap: 0;
-  border-bottom: 1px solid var(--color-bg-2);
-  transition: background 0.15s;
-}
-.alert-row:last-child {
-  border-bottom: none;
-}
-.alert-row:hover {
-  background: var(--color-bg-1);
+.alert-tile:hover {
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
 }
 
-.alert-row-bar {
+.alert-tile-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
   width: 4px;
-  flex-shrink: 0;
-  align-self: stretch;
-  min-height: 44px;
   border-radius: 0 2px 2px 0;
-  margin-right: 10px;
 }
-.alert-row--red .alert-row-bar {
+
+.alert-tile--red .alert-tile-accent {
   background: var(--color-danger-6);
 }
-.alert-row--amber .alert-row-bar {
+
+.alert-tile--amber .alert-tile-accent {
   background: var(--color-warning-6);
 }
 
-.alert-row-mid {
+.alert-tile-avatar {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin-left: 8px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #e8f5f0, #d1ebe0);
+  border: 1px solid rgba(45, 122, 106, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-primary-6);
+}
+
+.alert-tile-body {
   flex: 1;
   min-width: 0;
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 10px;
-}
-
-.alert-tag--red {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 7px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--alert-red-text);
-  background: var(--alert-red-bg);
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.alert-tag--amber {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 7px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--alert-yellow-text);
-  background: var(--alert-yellow-bg);
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.alert-row-identity {
-  display: inline-flex;
-  align-items: baseline;
+  flex-direction: column;
   gap: 6px;
-  min-width: 0;
-  flex: 1 1 140px;
-  max-width: 100%;
 }
 
-.alert-row-name {
-  font-size: 14px;
+.alert-tile-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.alert-tile-name {
+  font-size: 15px;
   font-weight: 700;
   color: var(--c1);
-  white-space: nowrap;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.alert-row-class {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--c1);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.alert-row-scale-wrap {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.alert-tile-time-rel {
   flex-shrink: 0;
-  max-width: 100%;
+  font-size: 12px;
+  color: var(--c3);
 }
 
-.alert-row-scale {
+.alert-tile-scoreline {
   font-size: 13px;
   color: var(--c2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
-.alert-score-green {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #047857;
-  background: #d1fae5;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.alert-row-aside {
+.alert-tile-foot {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 4px;
-  flex-shrink: 0;
-  padding-left: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
 }
 
-.alert-row-time {
+.alert-tile-time-abs {
   font-size: 11px;
   color: var(--c3);
-  line-height: 1.2;
-  white-space: nowrap;
 }
 
-.alert-row-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 28px;
-  padding: 0 10px;
+.alert-tile-btn {
+  flex-shrink: 0;
+  height: 30px;
+  padding: 0 12px;
   border: none;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
-  white-space: nowrap;
-}
-.alert-row-action--red {
-  background: var(--color-danger-6);
   color: #fff;
 }
-.alert-row-action--red:hover {
+
+.alert-tile-btn--red {
+  background: var(--color-danger-6);
+}
+
+.alert-tile-btn--red:hover {
   background: #dc2626;
 }
-.alert-row-action--amber {
+
+.alert-tile-btn--amber {
   background: var(--color-warning-6);
-  color: #fff;
 }
-.alert-row-action--amber:hover {
+
+.alert-tile-btn--amber:hover {
   background: #d97706;
 }
 
@@ -1352,11 +1469,13 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
     --pad: 14px;
   }
 
-  .dash-header { flex-direction: column; gap: 12px; }
-  .dash-header-actions { width: 100%; }
+  .dash-toolbar { flex-direction: column; align-items: stretch; gap: 12px; }
   .btn-new-plan { width: 100% !important; justify-content: center; }
 
-  .dash-greeting-row { flex-wrap: wrap; gap: 8px; }
+  .dash-welcome-banner {
+    margin: 0 -16px 16px;
+    padding: 0 16px;
+  }
 
   .kpi-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .kpi-card-num { font-size: 30px; }
