@@ -38,6 +38,7 @@ model Tenant {
   parentNotifications  ParentNotification[]
   reportTasks          ReportTask[]
   aiChatSessions       AiChatSession[]
+  medicalReferrals     MedicalReferral[]
 
   @@map("tenants")
 }
@@ -110,6 +111,7 @@ model User {
   consultAppointmentsAsCounselor ConsultAppointment[] @relation("ConsultApptCounselor")
   parentNotificationsSent       ParentNotification[] @relation("ParentNotifCounselor")
   reportTasks                   ReportTask[]
+  medicalReferrals              MedicalReferral[] @relation("MedicalReferralCounselor")
 
   @@index([tenantId, role])
   @@map("users")
@@ -138,6 +140,7 @@ model Student {
   parentBindings       ParentStudentBinding[]
   parentNotifications  ParentNotification[]
   aiChatSessions       AiChatSession[]
+  medicalReferrals     MedicalReferral[]
 
   @@index([tenantId, classId])
   @@map("students")
@@ -384,6 +387,33 @@ model CaseRecord {
   @@index([caseId])
   @@index([appointmentId], map: "idx_case_records_appointment")
   @@map("case_records")
+}
+
+// ==========================================
+// 医疗转介
+// ==========================================
+
+model MedicalReferral {
+  id             BigInt   @id @default(autoincrement())
+  tenantId       BigInt   @map("tenant_id")
+  studentId      BigInt   @map("student_id")
+  counselorId    BigInt   @map("counselor_id")
+  referralDate   DateTime @map("referral_date") @db.Date
+  institution    String   @db.VarChar(200)
+  reason         String   @db.Text
+  parentInformed Int      @default(0) @map("parent_informed") @db.TinyInt
+  status         String   @default("pending") @db.VarChar(20)
+  followUpNote   String?  @map("follow_up_note") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+  student   Student @relation(fields: [studentId], references: [id])
+  counselor User    @relation("MedicalReferralCounselor", fields: [counselorId], references: [id])
+
+  @@index([tenantId, studentId], map: "idx_tenant_student")
+  @@index([status], map: "idx_status")
+  @@map("medical_referrals")
 }
 
 // ==========================================
