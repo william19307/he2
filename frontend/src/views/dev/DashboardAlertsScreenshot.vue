@@ -21,23 +21,11 @@
                 </p>
               </div>
               <div class="shot-plant" aria-hidden="true">
-                <svg viewBox="0 0 120 120" class="shot-svg-plant" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <ellipse cx="60" cy="108" rx="36" ry="8" fill="#C8E6D9" opacity=".6"/>
-                  <path d="M60 52c10-18 28-24 40-20-14 8-22 24-24 40" fill="#5CB88A"/>
-                  <path d="M60 56C50 38 32 32 20 38c14 8 22 26 24 42" fill="#7BC99A"/>
-                </svg>
+                <img src="/images/dashboard-banner-left.png" alt="" class="shot-banner-left-img" width="64" height="64" decoding="async" />
               </div>
             </div>
             <div class="shot-campus">
-              <svg viewBox="0 0 200 120" class="shot-svg-campus" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="ssky" x1="0" y1="0" x2="200" y2="120">
-                    <stop stop-color="#B8E0D2"/><stop offset="1" stop-color="#F0FAF7"/>
-                  </linearGradient>
-                </defs>
-                <rect width="200" height="120" rx="12" fill="url(#ssky)"/>
-                <path d="M24 78V48h28l8-10 8 10h28v30" stroke="#2D7A6A" stroke-width="2" fill="#fff" fill-opacity=".85"/>
-              </svg>
+              <img src="/images/dashboard-banner-right.png" alt="" class="shot-banner-right-img" width="200" height="120" decoding="async" />
             </div>
           </div>
         </section>
@@ -247,10 +235,15 @@ const planDemo = [
   width: 64px;
   height: 64px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.shot-svg-plant {
-  width: 100%;
-  height: 100%;
+.shot-banner-left-img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  display: block;
 }
 .shot-campus {
   width: 140px;
@@ -259,9 +252,10 @@ const planDemo = [
   overflow: hidden;
   flex-shrink: 0;
 }
-.shot-svg-campus {
+.shot-banner-right-img {
   width: 100%;
   height: 100%;
+  object-fit: cover;
   display: block;
 }
 

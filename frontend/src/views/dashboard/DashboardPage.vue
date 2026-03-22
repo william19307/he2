@@ -31,44 +31,26 @@
               项待处理 · 与学校一同守护学生心理健康成长
             </p>
           </div>
-          <!-- 绿色植物 / 成长主题插画 -->
           <div class="dash-welcome-illust dash-welcome-illust--plant" aria-hidden="true">
-            <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="dash-svg-plant">
-              <ellipse cx="60" cy="108" rx="36" ry="8" fill="#C8E6D9" opacity=".6"/>
-              <path d="M48 102c0-28 12-44 28-52-8 16-6 36 4 50" stroke="#2D7A6A" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-              <path d="M72 102c0-24-10-40-24-48 10 14 12 34 6 48" stroke="#3D9B87" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-              <path d="M60 52c10-18 28-24 40-20-14 8-22 24-24 40" fill="#5CB88A"/>
-              <path d="M60 56C50 38 32 32 20 38c14 8 22 26 24 42" fill="#7BC99A"/>
-              <path d="M60 60c-6-22-26-34-44-30 16 10 28 28 32 46" fill="#4AA67E"/>
-              <circle cx="60" cy="48" r="6" fill="#FBBF24" opacity=".35"/>
-            </svg>
+            <img
+              src="/images/dashboard-banner-left.png"
+              alt=""
+              class="dash-banner-img dash-banner-img--left"
+              width="100"
+              height="100"
+              decoding="async"
+            />
           </div>
         </div>
         <div class="dash-welcome-art" aria-hidden="true">
-          <!-- 校园氛围：渐变 + 抽象建筑与书本（非照片） -->
-          <svg viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="dash-svg-campus">
-            <defs>
-              <linearGradient id="campusSky" x1="0" y1="0" x2="200" y2="120" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#B8E0D2"/>
-                <stop offset=".45" stop-color="#E8F5F0"/>
-                <stop offset="1" stop-color="#F0FAF7"/>
-              </linearGradient>
-              <linearGradient id="campusGround" x1="100" y1="85" x2="100" y2="120" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#9DCFBF" stop-opacity=".5"/>
-                <stop offset="1" stop-color="#C8E6D9" stop-opacity=".35"/>
-              </linearGradient>
-            </defs>
-            <rect width="200" height="120" rx="12" fill="url(#campusSky)"/>
-            <rect y="78" width="200" height="42" fill="url(#campusGround)"/>
-            <path d="M24 78V48h28l8-10 8 10h28v30" stroke="#2D7A6A" stroke-width="2" fill="#fff" fill-opacity=".85"/>
-            <path d="M120 78V52h18l6-8 6 8h18v26" stroke="#24655A" stroke-width="1.8" fill="#fff" fill-opacity=".9"/>
-            <rect x="152" y="58" width="36" height="20" rx="2" fill="#fff" fill-opacity=".7" stroke="#2D7A6A" stroke-width="1.2"/>
-            <path d="M158 64h24M158 68h18" stroke="#2D7A6A" stroke-width="1" opacity=".5"/>
-            <circle cx="170" cy="42" r="10" fill="#FDE68A" opacity=".9"/>
-            <circle cx="48" cy="36" r="3" fill="#fff" opacity=".8"/>
-            <circle cx="62" cy="30" r="2" fill="#fff" opacity=".6"/>
-            <ellipse cx="100" cy="92" rx="40" ry="6" fill="#2D7A6A" opacity=".12"/>
-          </svg>
+          <img
+            src="/images/dashboard-banner-right.png"
+            alt=""
+            class="dash-banner-img dash-banner-img--right"
+            width="240"
+            height="120"
+            decoding="async"
+          />
         </div>
       </div>
     </section>
@@ -815,9 +797,19 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   justify-content: center;
 }
 
-.dash-svg-plant {
-  width: 100%;
-  height: 100%;
+.dash-banner-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+.dash-banner-img--left {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
 }
 
 .dash-welcome-art {
@@ -829,10 +821,10 @@ watch([trendDates, trendRed, trendYellow], () => nextTick().then(drawTrend))
   box-shadow: 0 4px 16px rgba(15, 29, 25, 0.08);
 }
 
-.dash-svg-campus {
+.dash-banner-img--right {
   width: 100%;
   height: 100%;
-  display: block;
+  object-fit: cover;
 }
 
 @media (max-width: 768px) {
