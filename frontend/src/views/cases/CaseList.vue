@@ -7,6 +7,7 @@
     <a-tabs v-model:active-key="statusTab" type="rounded" class="case-tabs" @change="onTabChange">
       <a-tab-pane key="active" title="进行中" />
       <a-tab-pane key="closed" title="已结案" />
+      <a-tab-pane key="interview" title="访谈辅导" />
     </a-tabs>
 
     <div class="toolbar">
@@ -103,10 +104,28 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { getCases } from '@/api/cases'
 
+const route = useRoute()
+const router = useRouter()
+
+/** 与路由 query.tab 同步：访谈辅导使用 tab=访谈 */
 const statusTab = ref('active')
+
+function tabFromRouteQuery() {
+  const t = route.query.tab
+  if (t === '访谈' || t === 'interview') return 'interview'
+  if (t === 'closed') return 'closed'
+  return 'active'
+}
+
+function queryForTab(tab) {
+  if (tab === 'interview') return { tab: '访谈' }
+  if (tab === 'closed') return { tab: 'closed' }
+  return {}
+}
 const keyword = ref('')
 const list = ref([])
 const total = ref(0)
@@ -143,6 +162,7 @@ function formatDt(iso) {
 async function loadList() {
   loading.value = true
   try {
+    // 访谈辅导：与进行中共用 active 数据，后续可对接独立筛选
     const status = statusTab.value === 'closed' ? 'closed' : 'active'
     const res = await getCases({
       status,
@@ -162,9 +182,9 @@ async function loadList() {
   }
 }
 
-function onTabChange() {
+function onTabChange(key) {
   page.value = 1
-  loadList()
+  router.replace({ path: '/cases', query: queryForTab(key) })
 }
 
 function onSearch() {
@@ -187,10 +207,22 @@ function onMql(e) {
   isMobile.value = e.matches
 }
 
+watch(
+  () => route.query.tab,
+  () => {
+    if (route.path !== '/cases') return
+    const next = tabFromRouteQuery()
+    if (next !== statusTab.value) statusTab.value = next
+    page.value = 1
+    loadList()
+  }
+)
+
 onMounted(() => {
   mql = window.matchMedia('(max-width: 767px)')
   isMobile.value = mql.matches
   mql.addEventListener('change', onMql)
+  statusTab.value = tabFromRouteQuery()
   loadList()
 })
 

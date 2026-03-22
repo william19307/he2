@@ -134,6 +134,30 @@ const routes = [
         meta: { title: '预约管理', desktopOnly: true }
       },
       {
+        path: 'intervention/referral',
+        name: 'InterventionReferral',
+        component: () => import('../views/intervention/MedicalReferral.vue'),
+        meta: { title: '医疗转介', desktopOnly: true }
+      },
+      {
+        path: 'intervention/sandplay',
+        name: 'InterventionSandplay',
+        component: () => import('../views/intervention/SandplayTherapy.vue'),
+        meta: { title: '沙盘游戏疗法', desktopOnly: true }
+      },
+      {
+        path: 'intervention/art-therapy',
+        name: 'InterventionArtTherapy',
+        component: () => import('../views/intervention/ArtTherapy.vue'),
+        meta: { title: '绘画疗法', desktopOnly: true }
+      },
+      {
+        path: 'intervention/hotlines',
+        name: 'InterventionHotlines',
+        component: () => import('../views/intervention/PsychHotlines.vue'),
+        meta: { title: '心理援助热线', desktopOnly: true }
+      },
+      {
         path: 'admin/users',
         name: 'AdminUsers',
         component: () => import('../views/admin/AdminUsers.vue'),

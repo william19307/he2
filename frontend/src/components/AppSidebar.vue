@@ -157,6 +157,65 @@
         </div>
       </div>
 
+      <!-- 干预管理 -->
+      <div v-if="isCounselor" class="nav-group">
+        <div v-if="!appStore.sidebarCollapsed" class="nav-group-label">干预管理</div>
+
+        <div class="nav-item nav-item--parent" :class="{ 'nav-item--open': openKeys.includes('intervention') }">
+          <div class="nav-item-trigger" @click.stop="toggleGroup('intervention')">
+            <span class="nav-item-icon"><IconApps /></span>
+            <span v-if="!appStore.sidebarCollapsed" class="nav-item-text">干预管理</span>
+            <span v-if="!appStore.sidebarCollapsed" class="nav-chevron">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span v-if="appStore.sidebarCollapsed" class="nav-tooltip">干预管理</span>
+          </div>
+          <div
+            v-if="!appStore.sidebarCollapsed"
+            v-show="openKeys.includes('intervention')"
+            class="nav-children"
+          >
+            <a
+              class="nav-child"
+              :class="{ 'nav-child--active': isInterventionCasesDefault }"
+              @click="go('/cases')"
+            >个案管理</a>
+            <a
+              class="nav-child"
+              :class="{ 'nav-child--active': isInterventionInterview }"
+              @click="goWithQuery('/cases', { tab: '访谈' })"
+            >访谈辅导</a>
+            <a
+              class="nav-child"
+              :class="{ 'nav-child--active': route.path === '/consult/appointments' }"
+              @click="go('/consult/appointments')"
+            >心理咨询</a>
+            <a
+              class="nav-child"
+              :class="{ 'nav-child--active': route.path === '/intervention/referral' }"
+              @click="go('/intervention/referral')"
+            >医疗转介</a>
+            <a
+              class="nav-child"
+              :class="{ 'nav-child--active': route.path === '/intervention/sandplay' }"
+              @click="go('/intervention/sandplay')"
+            >沙盘疗法</a>
+            <a
+              class="nav-child"
+              :class="{ 'nav-child--active': route.path === '/intervention/art-therapy' }"
+              @click="go('/intervention/art-therapy')"
+            >绘画疗法</a>
+            <a
+              class="nav-child"
+              :class="{ 'nav-child--active': route.path === '/intervention/hotlines' }"
+              @click="go('/intervention/hotlines')"
+            >援助热线</a>
+          </div>
+        </div>
+      </div>
+
       <!-- 系统管理 -->
       <div v-if="isAdmin" class="nav-group">
         <div v-if="!appStore.sidebarCollapsed" class="nav-group-label">系统</div>
@@ -206,7 +265,7 @@ import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import {
   IconDashboard, IconExclamationCircle, IconUserGroup,
-  IconFile, IconBarChart, IconHeart, IconSettings,
+  IconFile, IconBarChart, IconHeart, IconSettings, IconApps,
 } from '@arco-design/web-vue/es/icon'
 
 const emit = defineEmits(['navigate'])
@@ -225,6 +284,21 @@ const isAdmin = computed(() => ['admin', 'super_admin'].includes(authStore.userR
 const isCounselor = computed(() => ['counselor', 'doctor', 'admin', 'super_admin'].includes(authStore.userRole))
 const avatarLetter = computed(() => (authStore.realName || '用')[0])
 
+/** 干预侧栏「个案管理」：/cases 列表页且非访谈 tab */
+const isInterventionCasesDefault = computed(() => {
+  if (route.path !== '/cases') return false
+  const t = route.query.tab
+  if (t === '访谈' || t === 'interview') return false
+  return true
+})
+
+/** 干预侧栏「访谈辅导」 */
+const isInterventionInterview = computed(() => {
+  if (route.path !== '/cases') return false
+  const t = route.query.tab
+  return t === '访谈' || t === 'interview'
+})
+
 // 默认展开包含当前路径的分组
 function getDefaultOpenKeys() {
   const p = route.path
@@ -234,6 +308,9 @@ function getDefaultOpenKeys() {
   if (p.startsWith('/plans') || p.startsWith('/scales')) keys.push('assessment')
   if (p.startsWith('/dashboard/class')) keys.push('analytics')
   if (p.startsWith('/consult')) keys.push('consult')
+  if (p.startsWith('/intervention') || (p === '/cases' && (route.query.tab === '访谈' || route.query.tab === 'interview'))) {
+    keys.push('intervention')
+  }
   if (p.startsWith('/admin')) keys.push('admin')
   return keys
 }
@@ -263,6 +340,11 @@ function isActive(path) {
 
 function go(path) {
   router.push(path)
+  emit('navigate')
+}
+
+function goWithQuery(path, query) {
+  router.push({ path, query })
   emit('navigate')
 }
 </script>
