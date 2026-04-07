@@ -50,11 +50,10 @@ async function assertSessionAccess(req, sessionId) {
   });
   if (!sess) throw new NotFoundError('培训');
   if (isAdminRole(req.user.role)) return sess;
-  const uid = BigInt(req.user.userId);
   if (sess.status === 'draft') throw new ForbiddenError('无权查看草稿培训');
-  const isParticipant = sess.participants.some((p) => p.counselorId === uid);
-  if (!isParticipant) throw new ForbiddenError('无权查看');
-  return sess;
+  /** 已发布/已完成：本校老师端可查看详情，不要求已是 participants（培训信息视为公开） */
+  if (sess.status === 'published' || sess.status === 'completed') return sess;
+  throw new ForbiddenError('无权查看');
 }
 
 function mapSession(s, extra = {}) {
@@ -310,6 +309,12 @@ async function runPublish(req, res, next) {
     const targetScope = b.target_scope === 'selected' ? 'selected' : 'all';
     let counselorRows;
 
+    const counselorUserSelect = {
+      id: true,
+      tenantId: true,
+      tenant: { select: { name: true } },
+    };
+
     if (targetScope === 'all') {
       counselorRows = await prisma.user.findMany({
         where: {
@@ -317,8 +322,7 @@ async function runPublish(req, res, next) {
           status: 1,
           role: { in: ['counselor', 'teacher', 'doctor'] },
         },
-        select: { id: true, tenantId: true },
-        include: { tenant: { select: { name: true } } },
+        select: counselorUserSelect,
       });
     } else {
       let raw = b.target_counselors ?? b.target_counselor_ids;
@@ -338,8 +342,7 @@ async function runPublish(req, res, next) {
           status: 1,
           role: { in: ['counselor', 'teacher', 'doctor'] },
         },
-        select: { id: true, tenantId: true },
-        include: { tenant: { select: { name: true } } },
+        select: counselorUserSelect,
       });
       if (counselorRows.length !== ids.length) {
         throw new ValidationError('存在无效的老师、非本校账号或角色不允许参与培训通知');
