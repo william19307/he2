@@ -80,6 +80,14 @@
             >
               个案管理
             </a>
+            <a
+              v-if="isCounselor"
+              class="nav-child"
+              :class="{ 'nav-child--active': route.path === '/training/my' }"
+              @click="go('/training/my')"
+            >
+              我的培训
+            </a>
           </div>
         </div>
       </div>
@@ -238,6 +246,20 @@
           >
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/admin/users' }" @click="go('/admin/users')">用户列表</a>
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/admin/students/import' }" @click="go('/admin/students/import')">导入学生</a>
+            <a
+              class="nav-child"
+              :class="{
+                'nav-child--active':
+                  route.path === '/training' ||
+                  (route.path.startsWith('/training/') && route.path !== '/training/my'),
+              }"
+              @click="go('/training')"
+            >培训管理</a>
+            <a
+              class="nav-child"
+              :class="{ 'nav-child--active': route.path === '/transfers/pending' }"
+              @click="go('/transfers/pending')"
+            >待认领学生</a>
           </div>
         </div>
       </div>
@@ -312,6 +334,8 @@ function getDefaultOpenKeys() {
     keys.push('intervention')
   }
   if (p.startsWith('/admin')) keys.push('admin')
+  if (p.startsWith('/training')) keys.push('students')
+  if (p.startsWith('/transfers')) keys.push('admin')
   return keys
 }
 

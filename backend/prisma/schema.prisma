@@ -39,6 +39,11 @@ model Tenant {
   reportTasks          ReportTask[]
   aiChatSessions       AiChatSession[]
   medicalReferrals     MedicalReferral[]
+  trainingSessions     TrainingSession[]
+  trainingParticipants TrainingParticipant[]
+  studentPhysicals     StudentPhysical[]
+  studentTransfersFrom StudentTransfer[] @relation("TransferFromTenant")
+  studentTransfersTo   StudentTransfer[] @relation("TransferToTenant")
 
   @@map("tenants")
 }
@@ -112,6 +117,10 @@ model User {
   parentNotificationsSent       ParentNotification[] @relation("ParentNotifCounselor")
   reportTasks                   ReportTask[]
   medicalReferrals              MedicalReferral[] @relation("MedicalReferralCounselor")
+  organizedTrainingSessions     TrainingSession[] @relation("TrainingOrganizer")
+  trainingParticipations        TrainingParticipant[]
+  physicalRecordsRecorded       StudentPhysical[] @relation("PhysicalRecorder")
+  studentTransfersOperated      StudentTransfer[] @relation("TransferOperator")
 
   @@index([tenantId, role])
   @@map("users")
@@ -130,6 +139,12 @@ model Student {
   guardian2Phone String?   @map("guardian2_phone") @db.VarChar(20)
   specialFlag   Int       @default(0) @map("special_flag") @db.TinyInt
 
+  graduationStatus   String    @default("enrolled") @map("graduation_status") @db.VarChar(20)
+  transferSchoolId   BigInt?   @map("transfer_school_id")
+  transferSchoolName String?   @map("transfer_school_name") @db.VarChar(200)
+  transferDate       DateTime? @map("transfer_date") @db.Date
+  transferStatus     String?   @map("transfer_status") @db.VarChar(20)
+
   tenant          Tenant           @relation(fields: [tenantId], references: [id])
   user            User             @relation(fields: [userId], references: [id])
   class_          Class            @relation(fields: [classId], references: [id])
@@ -141,6 +156,8 @@ model Student {
   parentNotifications  ParentNotification[]
   aiChatSessions       AiChatSession[]
   medicalReferrals     MedicalReferral[]
+  physicals            StudentPhysical[]
+  transfers            StudentTransfer[]
 
   @@index([tenantId, classId])
   @@map("students")
@@ -656,4 +673,101 @@ enum AiChatRiskLevel {
 enum AiChatMessageRole {
   user
   assistant
+}
+
+// ==========================================
+// 新功能：体测 / 培训 / 升学（new-features.md）
+// ==========================================
+
+model StudentPhysical {
+  id          BigInt    @id @default(autoincrement())
+  tenantId    BigInt    @map("tenant_id")
+  studentId   BigInt    @map("student_id")
+  recordDate  DateTime  @map("record_date") @db.Date
+  height      Decimal?  @db.Decimal(5, 1)
+  weight      Decimal?  @db.Decimal(5, 2)
+  bmi         Decimal?  @db.Decimal(4, 2)
+  bmiStatus   String?   @map("bmi_status") @db.VarChar(20)
+  visionLeft  Decimal?  @map("vision_left") @db.Decimal(4, 2)
+  visionRight Decimal?  @map("vision_right") @db.Decimal(4, 2)
+  note        String?   @db.Text
+  recorderId  BigInt?   @map("recorder_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  tenant   Tenant  @relation(fields: [tenantId], references: [id])
+  student  Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  recorder User?   @relation("PhysicalRecorder", fields: [recorderId], references: [id])
+
+  @@index([tenantId, studentId])
+  @@index([recordDate])
+  @@map("student_physicals")
+}
+
+model TrainingSession {
+  id            BigInt   @id @default(autoincrement())
+  tenantId      BigInt   @map("tenant_id")
+  title         String   @db.VarChar(200)
+  description   String?  @db.Text
+  organizerId   BigInt   @map("organizer_id")
+  trainingDate  DateTime @map("training_date") @db.Date
+  location      String?  @db.VarChar(200)
+  status        String   @default("draft") @db.VarChar(20)
+  targetScope   String   @default("all") @map("target_scope") @db.VarChar(20)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  tenant        Tenant                 @relation(fields: [tenantId], references: [id])
+  organizer     User                   @relation("TrainingOrganizer", fields: [organizerId], references: [id])
+  participants  TrainingParticipant[]
+
+  @@index([tenantId, status])
+  @@map("training_sessions")
+}
+
+model TrainingParticipant {
+  id           BigInt    @id @default(autoincrement())
+  sessionId    BigInt    @map("session_id")
+  tenantId     BigInt    @map("tenant_id")
+  counselorId  BigInt    @map("counselor_id")
+  schoolName   String?   @map("school_name") @db.VarChar(200)
+  status       String    @default("invited") @db.VarChar(20)
+  attendedAt   DateTime? @map("attended_at")
+  note         String?   @db.VarChar(500)
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  session   TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  tenant    Tenant          @relation(fields: [tenantId], references: [id])
+  counselor User            @relation(fields: [counselorId], references: [id])
+
+  @@unique([sessionId, counselorId])
+  @@index([counselorId])
+  @@map("training_participants")
+}
+
+model StudentTransfer {
+  id                BigInt    @id @default(autoincrement())
+  studentId         BigInt    @map("student_id")
+  transferType      String    @map("transfer_type") @db.VarChar(30)
+  fromTenantId      BigInt    @map("from_tenant_id")
+  fromSchoolName    String?   @map("from_school_name") @db.VarChar(200)
+  fromCounselorId   BigInt?   @map("from_counselor_id")
+  toTenantId        BigInt?   @map("to_tenant_id")
+  toSchoolName      String?   @map("to_school_name") @db.VarChar(200)
+  toCounselorId     BigInt?   @map("to_counselor_id")
+  newGrade          String?   @map("new_grade") @db.VarChar(50)
+  newClass          String?   @map("new_class") @db.VarChar(50)
+  transferDate      DateTime  @map("transfer_date") @db.Date
+  status            String    @default("pending") @db.VarChar(20)
+  note              String?   @db.Text
+  operatorId        BigInt?   @map("operator_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  fromTenant Tenant @relation("TransferFromTenant", fields: [fromTenantId], references: [id])
+  toTenant   Tenant? @relation("TransferToTenant", fields: [toTenantId], references: [id])
+  operator   User?   @relation("TransferOperator", fields: [operatorId], references: [id])
+
+  @@index([studentId])
+  @@index([status])
+  @@map("student_transfers")
 }

@@ -22,6 +22,11 @@
               <template #icon><icon-download /></template>
               下载报告
             </a-button>
+            <a-button @click="openPrintWindow">
+              <template #icon><IconPrinter /></template>
+              打印档案
+            </a-button>
+            <a-button v-if="showTransferBtn" @click="openTransferModal">办理升学</a-button>
           </template>
           <template #title>
             <a-space>
@@ -210,6 +215,43 @@
           </template>
         </a-tab-pane>
 
+        <a-tab-pane key="physical" title="体测记录">
+          <div v-if="physicalLatest" class="phys-cards">
+            <div class="phys-card"><span class="phys-lab">身高</span><span class="phys-val">{{ fmtPhys(physicalLatest.height) }} cm</span></div>
+            <div class="phys-card"><span class="phys-lab">体重</span><span class="phys-val">{{ fmtPhys(physicalLatest.weight) }} kg</span></div>
+            <div class="phys-card"><span class="phys-lab">BMI</span><span class="phys-val">{{ physicalLatest.bmi != null ? physicalLatest.bmi : '—' }} <a-tag v-if="physicalLatest.bmi_status" size="small">{{ physicalLatest.bmi_status }}</a-tag></span></div>
+            <div class="phys-card"><span class="phys-lab">视力（左/右）</span><span class="phys-val">{{ fmtVision(physicalLatest.vision_left) }} / {{ fmtVision(physicalLatest.vision_right) }}</span></div>
+          </div>
+          <a-empty v-else-if="!physicalLoading" description="暂无体测记录" />
+          <div class="phys-toolbar">
+            <a-button type="primary" size="small" @click="openPhysicalModal()">新增体测记录</a-button>
+          </div>
+          <a-table
+            v-if="!isMobile"
+            :data="physicalList"
+            :loading="physicalLoading"
+            :pagination="false"
+            row-key="id"
+            size="small"
+          >
+            <template #columns>
+              <a-table-column title="日期" data-index="record_date" :width="110" />
+              <a-table-column title="身高" :width="72"><template #cell="{ record }">{{ fmtPhys(record.height) }}</template></a-table-column>
+              <a-table-column title="体重" :width="72"><template #cell="{ record }">{{ fmtPhys(record.weight) }}</template></a-table-column>
+              <a-table-column title="BMI" :width="100"><template #cell="{ record }">{{ record.bmi != null ? record.bmi : '—' }} {{ record.bmi_status || '' }}</template></a-table-column>
+              <a-table-column title="左视力" :width="72"><template #cell="{ record }">{{ fmtVision(record.vision_left) }}</template></a-table-column>
+              <a-table-column title="右视力" :width="72"><template #cell="{ record }">{{ fmtVision(record.vision_right) }}</template></a-table-column>
+              <a-table-column title="录入人" data-index="recorder_name" :width="90" />
+              <a-table-column title="操作" :width="120">
+                <template #cell="{ record }">
+                  <a-link @click="openPhysicalModal(record)">编辑</a-link>
+                  <a-link v-if="canDeletePhysical" status="danger" @click="removePhysical(record)">删除</a-link>
+                </template>
+              </a-table-column>
+            </template>
+          </a-table>
+        </a-tab-pane>
+
         <a-tab-pane key="parent" title="家长沟通">
           <a-button type="primary" @click="parentModalVisible = true">记录家长沟通</a-button>
           <a-empty v-if="!parentHint" description="沟通记录将写入个案档案（无个案时会自动建档）" />
@@ -262,27 +304,421 @@
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <a-modal
+      v-model:visible="physicalModalVisible"
+      :title="physicalEditId ? '编辑体测' : '新增体测记录'"
+      width="480px"
+      @before-ok="submitPhysical"
+      @cancel="resetPhysicalForm"
+    >
+      <a-form :model="physicalForm" layout="vertical">
+        <a-form-item label="体测日期" required>
+          <a-date-picker v-model="physicalForm.record_date" style="width:100%" value-format="YYYY-MM-DD" />
+        </a-form-item>
+        <a-form-item label="身高 (cm)">
+          <a-input-number v-model="physicalForm.height" :precision="1" :min="50" :max="250" style="width:100%" @change="recalcBmiPreview" />
+        </a-form-item>
+        <a-form-item label="体重 (kg)">
+          <a-input-number v-model="physicalForm.weight" :precision="2" :min="10" :max="200" style="width:100%" @change="recalcBmiPreview" />
+        </a-form-item>
+        <a-form-item label="BMI（自动）">
+          <span class="phys-bmi-preview">{{ bmiPreviewText }}</span>
+        </a-form-item>
+        <a-form-item label="左眼视力">
+          <a-input-number v-model="physicalForm.vision_left" :precision="1" :min="0" :max="6" style="width:100%" />
+        </a-form-item>
+        <a-form-item label="右眼视力">
+          <a-input-number v-model="physicalForm.vision_right" :precision="1" :min="0" :max="6" style="width:100%" />
+        </a-form-item>
+        <a-form-item label="备注">
+          <a-textarea v-model="physicalForm.note" :max-length="500" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <a-modal
+      v-model:visible="transferModalVisible"
+      title="办理升学"
+      width="520px"
+      :ok-loading="transferSubmitting"
+      @before-ok="submitTransfer"
+    >
+      <a-radio-group v-model="transferForm.transfer_type" type="button" class="tf-type">
+        <a-radio value="same_school">本校升学</a-radio>
+        <a-radio value="cross_school">跨校升学</a-radio>
+        <a-radio value="other">升入其他地市</a-radio>
+      </a-radio-group>
+      <a-form :model="transferForm" layout="vertical" style="margin-top:12px">
+        <template v-if="transferForm.transfer_type === 'same_school'">
+          <a-form-item label="新班级" required>
+            <a-select v-model="transferForm.new_class_id" placeholder="选择班级" allow-search :options="sameSchoolClassOptions" />
+          </a-form-item>
+        </template>
+        <template v-else-if="transferForm.transfer_type === 'cross_school'">
+          <a-form-item label="目标学校" required>
+            <a-select
+              v-model="transferForm.to_tenant_id"
+              allow-search
+              :filter-option="false"
+              placeholder="搜索学校名称或代码"
+              :loading="tenantSearchLoading"
+              @search="onTenantSearch"
+            >
+              <a-option v-for="t in tenantOptions" :key="t.id" :value="t.id">{{ t.name }}（{{ t.code }}）</a-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item label="目标班级" required>
+            <a-select v-model="transferForm.new_class_id" placeholder="先选学校" :options="crossClassOptions" allow-clear />
+          </a-form-item>
+          <a-form-item label="目标心理老师">
+            <a-select v-model="transferForm.to_counselor_id" placeholder="先选学校" :options="crossCounselorOptions" allow-clear />
+          </a-form-item>
+        </template>
+        <template v-else>
+          <a-form-item label="学校名称" required>
+            <a-input v-model="transferForm.to_school_name" placeholder="手填去向学校" />
+          </a-form-item>
+          <a-form-item label="地市">
+            <a-input v-model="transferForm.transfer_city" placeholder="可选" />
+          </a-form-item>
+        </template>
+        <a-form-item label="升学日期" required>
+          <a-date-picker v-model="transferForm.transfer_date" style="width:100%" value-format="YYYY-MM-DD" />
+        </a-form-item>
+        <a-form-item label="备注">
+          <a-textarea v-model="transferForm.note" />
+        </a-form-item>
+      </a-form>
+      <p class="tf-hint">升学后该学生的历史档案将完整保留。跨校迁移不可轻易撤销，请确认信息无误。</p>
+    </a-modal>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { Message } from '@arco-design/web-vue'
-import { IconFilter } from '@arco-design/web-vue/es/icon'
+import { useRoute, useRouter } from 'vue-router'
+import { Message, Modal } from '@arco-design/web-vue'
+import { IconFilter, IconPrinter } from '@arco-design/web-vue/es/icon'
+import { useAuthStore } from '@/stores/auth'
 import {
   getStudentProfile,
   getStudentAssessments,
   getStudentAlerts,
   getStudentCase,
   postStudentParentComm,
+  getGrades,
+  getGradeClasses,
+  getStudentPhysicals,
+  postStudentPhysical,
+  putStudentPhysical,
+  deleteStudentPhysical,
+  postStudentTransfer,
 } from '@/api/students'
+import { searchTenants, getClassesForTenant, getCounselorsForTenant } from '@/api/adminExtra'
 import { postStudentReport, getReportTask, getReportDownloadUrl } from '@/api/reports'
 import request from '@/utils/request'
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
 const userId = computed(() => route.params.id)
 const isMobile = ref(false)
+
+const showTransferBtn = computed(() =>
+  ['counselor', 'admin', 'super_admin'].includes(authStore.userRole)
+)
+const canDeletePhysical = computed(() =>
+  ['counselor', 'doctor', 'admin', 'super_admin'].includes(authStore.userRole)
+)
+
+function openPrintWindow() {
+  const r = router.resolve({ name: 'StudentPrint', params: { id: userId.value } })
+  window.open(r.href, '_blank')
+}
+
+const physicalList = ref([])
+const physicalLoading = ref(false)
+const physicalModalVisible = ref(false)
+const physicalEditId = ref(null)
+const physicalForm = reactive({
+  record_date: '',
+  height: undefined,
+  weight: undefined,
+  vision_left: undefined,
+  vision_right: undefined,
+  note: '',
+})
+
+function computeBmiLocal(h, w) {
+  if (!h || !w) return { bmi: null, label: '' }
+  const hm = Number(h) / 100
+  const raw = Number(w) / (hm * hm)
+  const bmi = Math.round(raw * 10) / 10
+  let label = '正常'
+  if (raw < 15) label = '偏瘦'
+  else if (raw < 23) label = '正常'
+  else if (raw < 27.5) label = '超重'
+  else label = '肥胖'
+  return { bmi, label }
+}
+
+const bmiPreviewText = computed(() => {
+  const { bmi, label } = computeBmiLocal(physicalForm.height, physicalForm.weight)
+  if (bmi == null) return '填写身高体重后自动计算'
+  return `${bmi}（${label}）`
+})
+
+function recalcBmiPreview() {}
+
+const physicalLatest = computed(() => physicalList.value[0] || null)
+
+function fmtPhys(v) {
+  return v != null && v !== '' ? v : '—'
+}
+function fmtVision(v) {
+  return v != null && v !== '' ? v : '—'
+}
+
+async function loadPhysicals() {
+  physicalLoading.value = true
+  try {
+    const res = await getStudentPhysicals(userId.value)
+    physicalList.value = res.data?.list || []
+  } catch {
+    physicalList.value = []
+  } finally {
+    physicalLoading.value = false
+  }
+}
+
+function openPhysicalModal(row) {
+  physicalEditId.value = row?.id ?? null
+  if (row) {
+    Object.assign(physicalForm, {
+      record_date: row.record_date || '',
+      height: row.height ?? undefined,
+      weight: row.weight ?? undefined,
+      vision_left: row.vision_left ?? undefined,
+      vision_right: row.vision_right ?? undefined,
+      note: row.note || '',
+    })
+  } else {
+    const d = new Date()
+    Object.assign(physicalForm, {
+      record_date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+      height: undefined,
+      weight: undefined,
+      vision_left: undefined,
+      vision_right: undefined,
+      note: '',
+    })
+  }
+  physicalModalVisible.value = true
+}
+
+function resetPhysicalForm() {
+  physicalEditId.value = null
+}
+
+async function submitPhysical() {
+  if (!physicalForm.record_date) {
+    Message.warning('请选择体测日期')
+    return false
+  }
+  const payload = {
+    record_date: physicalForm.record_date,
+    height: physicalForm.height,
+    weight: physicalForm.weight,
+    vision_left: physicalForm.vision_left,
+    vision_right: physicalForm.vision_right,
+    note: physicalForm.note,
+  }
+  try {
+    if (physicalEditId.value) {
+      await putStudentPhysical(userId.value, physicalEditId.value, payload)
+      Message.success('已更新')
+    } else {
+      await postStudentPhysical(userId.value, payload)
+      Message.success('已保存')
+    }
+    await loadPhysicals()
+    physicalModalVisible.value = false
+    return true
+  } catch {
+    return false
+  }
+}
+
+function removePhysical(record) {
+  Modal.confirm({
+    title: '删除体测记录',
+    content: '确定删除该条记录？',
+    onOk: async () => {
+      await deleteStudentPhysical(userId.value, record.id)
+      Message.success('已删除')
+      await loadPhysicals()
+    },
+  })
+}
+
+const transferModalVisible = ref(false)
+const transferSubmitting = ref(false)
+const transferForm = reactive({
+  transfer_type: 'same_school',
+  new_class_id: undefined,
+  to_tenant_id: undefined,
+  to_counselor_id: undefined,
+  to_school_name: '',
+  transfer_city: '',
+  transfer_date: '',
+  note: '',
+})
+const sameSchoolClassOptions = ref([])
+const tenantOptions = ref([])
+const tenantSearchLoading = ref(false)
+const crossClassOptions = ref([])
+const crossCounselorOptions = ref([])
+
+async function loadSameSchoolClasses() {
+  const opts = []
+  try {
+    const gRes = await getGrades()
+    const grades = Array.isArray(gRes.data) ? gRes.data : []
+    for (const g of grades) {
+      const cRes = await getGradeClasses(g.id)
+      const cls = Array.isArray(cRes.data) ? cRes.data : []
+      for (const c of cls) {
+        opts.push({
+          value: Number(c.id),
+          label: `${g.name || ''} ${c.name || ''}`.trim(),
+        })
+      }
+    }
+  } catch { /* ignore */ }
+  sameSchoolClassOptions.value = opts
+}
+
+async function openTransferModal() {
+  await loadSameSchoolClasses()
+  Object.assign(transferForm, {
+    transfer_type: 'same_school',
+    new_class_id: undefined,
+    to_tenant_id: undefined,
+    to_counselor_id: undefined,
+    to_school_name: '',
+    transfer_city: '',
+    transfer_date: '',
+    note: '',
+  })
+  tenantOptions.value = []
+  crossClassOptions.value = []
+  crossCounselorOptions.value = []
+  transferModalVisible.value = true
+}
+
+let tenantSearchTimer = null
+function onTenantSearch(kw) {
+  clearTimeout(tenantSearchTimer)
+  tenantSearchTimer = setTimeout(async () => {
+    tenantSearchLoading.value = true
+    try {
+      const res = await searchTenants({ keyword: kw || undefined })
+      tenantOptions.value = res.data?.list || []
+    } finally {
+      tenantSearchLoading.value = false
+    }
+  }, 300)
+}
+
+watch(
+  () => transferForm.to_tenant_id,
+  async (tid) => {
+    if (!tid || transferForm.transfer_type !== 'cross_school') return
+    try {
+      const [cRes, uRes] = await Promise.all([
+        getClassesForTenant(tid),
+        getCounselorsForTenant(tid),
+      ])
+      crossClassOptions.value = (cRes.data?.list || []).map((c) => ({
+        value: c.id,
+        label: c.name,
+      }))
+      crossCounselorOptions.value = (uRes.data?.list || []).map((u) => ({
+        value: u.id,
+        label: u.real_name,
+      }))
+    } catch {
+      crossClassOptions.value = []
+      crossCounselorOptions.value = []
+    }
+  }
+)
+
+async function submitTransfer() {
+  const t = transferForm.transfer_type
+  if (!transferForm.transfer_date) {
+    Message.warning('请选择升学日期')
+    return false
+  }
+  if (t === 'same_school' && transferForm.new_class_id == null) {
+    Message.warning('请选择新班级')
+    return false
+  }
+  if (t === 'cross_school') {
+    if (transferForm.to_tenant_id == null || transferForm.new_class_id == null) {
+      Message.warning('请选择目标学校与班级')
+      return false
+    }
+    const ok = await new Promise((resolve) => {
+      Modal.confirm({
+        title: '确认跨校迁移',
+        content: '学生将转入目标学校，原校老师将不再看到该生档案，操作不可自动撤销。是否继续？',
+        onOk: () => resolve(true),
+        onCancel: () => resolve(false),
+      })
+    })
+    if (!ok) return false
+  }
+  if (t === 'other' && !String(transferForm.to_school_name || '').trim()) {
+    Message.warning('请填写学校名称')
+    return false
+  }
+
+  transferSubmitting.value = true
+  try {
+    const payload = {
+      transfer_type: t,
+      transfer_date: transferForm.transfer_date,
+      note: transferForm.note,
+    }
+    if (t === 'same_school') {
+      payload.new_class_id = transferForm.new_class_id
+    } else if (t === 'cross_school') {
+      payload.to_tenant_id = transferForm.to_tenant_id
+      payload.new_class_id = transferForm.new_class_id
+      if (transferForm.to_counselor_id != null) {
+        payload.to_counselor_id = transferForm.to_counselor_id
+      }
+      const to = tenantOptions.value.find((x) => x.id === transferForm.to_tenant_id)
+      if (to) payload.to_school_name = to.name
+    } else {
+      payload.to_school_name = transferForm.to_school_name
+      if (transferForm.transfer_city) {
+        payload.note = [transferForm.note, `地市：${transferForm.transfer_city}`].filter(Boolean).join(' ')
+      }
+    }
+    await postStudentTransfer(userId.value, payload)
+    Message.success('已办理')
+    await loadProfile()
+    transferModalVisible.value = false
+    return true
+  } catch {
+    return false
+  } finally {
+    transferSubmitting.value = false
+  }
+}
 const showAssessFilters = ref(false)
 
 const profile = ref(null)
@@ -519,6 +955,7 @@ function onTabChange(key) {
   if (key === 'assessments' && !assessList.value.length) loadAssessments()
   if (key === 'alerts' && !alertList.value.length) loadAlerts()
   if (key === 'case' && caseData.value === null) loadCase()
+  if (key === 'physical' && !physicalList.value.length && !physicalLoading.value) loadPhysicals()
 }
 
 function resetParentForm() {
@@ -646,4 +1083,22 @@ onMounted(async () => {
 .mobile-item { font-size: 13px; }
 .mi-title { font-size: 14px; font-weight: 600; }
 .mi-line { margin-top: 4px; color: var(--color-text-2); font-size: 13px; }
+
+.phys-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.phys-card {
+  padding: 12px;
+  background: var(--color-bg-2);
+  border-radius: var(--radius-md);
+}
+.phys-lab { display: block; font-size: 12px; color: var(--color-text-3); }
+.phys-val { font-size: 15px; font-weight: 600; margin-top: 4px; }
+.phys-toolbar { margin-bottom: 12px; }
+.phys-bmi-preview { color: var(--color-text-3); font-size: 13px; }
+.tf-type { width: 100%; flex-wrap: wrap; }
+.tf-hint { font-size: 12px; color: var(--color-text-3); margin-top: 8px; }
 </style>
