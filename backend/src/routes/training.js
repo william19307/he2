@@ -13,10 +13,23 @@ function isAdminRole(role) {
 }
 
 function normalizeDraftIdsFromBody(b) {
-  const raw = b.target_counselor_ids ?? b.draft_target_counselor_ids;
+  const raw =
+    b.target_counselors ?? b.target_counselor_ids ?? b.draft_target_counselor_ids;
   if (raw === undefined) return undefined;
   if (!Array.isArray(raw)) throw new ValidationError('老师 ID 列表须为数组');
   return raw.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+}
+
+function requireTenantId(req) {
+  const tid = req.tenantId;
+  if (tid == null) throw new ValidationError('租户信息缺失，请重新登录');
+  return tid;
+}
+
+function parseTrainingDate(s) {
+  const d = new Date(String(s));
+  if (Number.isNaN(d.getTime())) throw new ValidationError('training_date 无效，请使用 YYYY-MM-DD');
+  return d;
 }
 
 function jsonDraftIds(j) {
@@ -26,7 +39,7 @@ function jsonDraftIds(j) {
 }
 
 async function assertSessionAccess(req, sessionId) {
-  const tid = req.tenantId;
+  const tid = requireTenantId(req);
   const sid = BigInt(sessionId);
   const sess = await prisma.trainingSession.findFirst({
     where: { id: sid, tenantId: tid },
@@ -74,7 +87,7 @@ function mapSession(s, extra = {}) {
 /** GET /my — 我的培训（兼容旧端，与列表合并后仍保留） */
 router.get('/my', authorize('counselor'), async (req, res, next) => {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const uid = BigInt(req.user.userId);
     const parts = await prisma.trainingParticipant.findMany({
       where: { counselorId: uid, tenantId: tid },
@@ -103,7 +116,7 @@ router.get('/my', authorize('counselor'), async (req, res, next) => {
 /** GET /sessions — admin：全部；老师/心理师：仅被邀请的培训 */
 router.get('/sessions', async (req, res, next) => {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const page = Math.max(1, Number(req.query.page) || 1);
     const pageSize = Math.min(50, Math.max(1, Number(req.query.page_size) || 20));
     const tab = String(req.query.tab || 'all');
@@ -179,10 +192,10 @@ router.get('/sessions', async (req, res, next) => {
   }
 });
 
-/** POST /sessions */
+/** POST /sessions — 仅 admin / super_admin */
 router.post('/sessions', authorize('admin'), async (req, res, next) => {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const b = req.body || {};
     if (!b.title || !b.training_date) throw new ValidationError('title、training_date 必填');
     const scope = b.target_scope === 'selected' ? 'selected' : 'all';
@@ -193,8 +206,8 @@ router.post('/sessions', authorize('admin'), async (req, res, next) => {
         tenantId: tid,
         title: String(b.title).slice(0, 200),
         description: b.description || null,
-        organizerId: BigInt(req.user.userId),
-        trainingDate: new Date(String(b.training_date)),
+        organizerId: BigInt(String(req.user.userId)),
+        trainingDate: parseTrainingDate(b.training_date),
         location: b.location || null,
         status: 'draft',
         targetScope: scope,
@@ -242,7 +255,7 @@ router.get('/sessions/:id', async (req, res, next) => {
 /** PUT /sessions/:id */
 router.put('/sessions/:id', authorize('admin'), async (req, res, next) => {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const sid = BigInt(req.params.id);
     const exist = await prisma.trainingSession.findFirst({
       where: { id: sid, tenantId: tid },
@@ -257,11 +270,15 @@ router.put('/sessions/:id', authorize('admin'), async (req, res, next) => {
     const data = {
       title: b.title != null ? String(b.title).slice(0, 200) : undefined,
       description: b.description !== undefined ? b.description : undefined,
-      trainingDate: b.training_date ? new Date(String(b.training_date)) : undefined,
+      trainingDate: b.training_date ? parseTrainingDate(b.training_date) : undefined,
       location: b.location !== undefined ? b.location : undefined,
       targetScope: b.target_scope === 'selected' || b.target_scope === 'all' ? nextScope : undefined,
     };
-    if (b.target_counselor_ids !== undefined || b.draft_target_counselor_ids !== undefined) {
+    if (
+      b.target_counselors !== undefined ||
+      b.target_counselor_ids !== undefined ||
+      b.draft_target_counselor_ids !== undefined
+    ) {
       const draftIds = normalizeDraftIdsFromBody(b);
       data.draftTargetCounselorIds =
         nextScope === 'selected' ? (draftIds.length ? draftIds : null) : null;
@@ -281,7 +298,7 @@ router.put('/sessions/:id', authorize('admin'), async (req, res, next) => {
 
 async function runPublish(req, res, next) {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const sid = BigInt(req.params.id);
     const sess = await prisma.trainingSession.findFirst({
       where: { id: sid, tenantId: tid },
@@ -304,14 +321,20 @@ async function runPublish(req, res, next) {
         include: { tenant: { select: { name: true } } },
       });
     } else {
-      const raw = b.target_counselors;
+      let raw = b.target_counselors ?? b.target_counselor_ids;
       if (!Array.isArray(raw) || raw.length === 0) {
-        throw new ValidationError('定向发布时 target_counselors 必填');
+        raw = jsonDraftIds(sess.draftTargetCounselorIds);
       }
-      const ids = [...new Set(raw.map((x) => BigInt(x)))];
+      if (!Array.isArray(raw) || raw.length === 0) {
+        throw new ValidationError(
+          '定向发布时请在 body 中提供 target_counselors，或在草稿中先保存定向老师列表'
+        );
+      }
+      const ids = [...new Set(raw.map((x) => BigInt(String(x))))];
       counselorRows = await prisma.user.findMany({
         where: {
           id: { in: ids },
+          tenantId: tid,
           status: 1,
           role: { in: ['counselor', 'teacher', 'doctor'] },
         },
@@ -319,11 +342,7 @@ async function runPublish(req, res, next) {
         include: { tenant: { select: { name: true } } },
       });
       if (counselorRows.length !== ids.length) {
-        throw new ValidationError('存在无效的老师或角色不允许参与培训通知');
-      }
-      if (req.user.role !== 'super_admin') {
-        const cross = counselorRows.some((u) => u.tenantId !== tid);
-        if (cross) throw new ForbiddenError('仅可向本校老师发送培训通知');
+        throw new ValidationError('存在无效的老师、非本校账号或角色不允许参与培训通知');
       }
     }
 
@@ -384,7 +403,7 @@ router.post('/sessions/:id/publish', authorize('admin'), runPublish);
 /** POST /sessions/:id/complete */
 router.post('/sessions/:id/complete', authorize('admin'), async (req, res, next) => {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const sid = BigInt(req.params.id);
     const r = await prisma.trainingSession.updateMany({
       where: { id: sid, tenantId: tid, status: 'published' },
@@ -400,7 +419,7 @@ router.post('/sessions/:id/complete', authorize('admin'), async (req, res, next)
 /** PUT /sessions/:id/participants */
 router.put('/sessions/:id/participants', authorize('admin'), async (req, res, next) => {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const sid = BigInt(req.params.id);
     const sess = await prisma.trainingSession.findFirst({
       where: { id: sid, tenantId: tid },
