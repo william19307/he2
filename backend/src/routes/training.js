@@ -9,7 +9,8 @@ const router = Router();
 router.use(authorize('teacher'));
 
 function isAdminRole(role) {
-  return role === 'admin' || role === 'super_admin';
+  const r = String(role ?? '').trim().toLowerCase();
+  return r === 'admin' || r === 'super_admin';
 }
 
 function normalizeDraftIdsFromBody(b) {
@@ -112,7 +113,7 @@ router.get('/my', authorize('counselor'), async (req, res, next) => {
   }
 });
 
-/** GET /sessions — admin：全部；老师/心理师：仅被邀请的培训 */
+/** GET /sessions — admin：全部；老师/心理师/校医：本校已发布与已完成的全部培训（含未邀请本人） */
 router.get('/sessions', async (req, res, next) => {
   try {
     const tid = requireTenantId(req);
@@ -146,7 +147,6 @@ router.get('/sessions', async (req, res, next) => {
     const where = {
       tenantId: tid,
       status: { in: ['published', 'completed'] },
-      participants: { some: { counselorId: uid } },
     };
     if (tab === 'ongoing') where.status = 'published';
     else if (tab === 'done') where.status = 'completed';
@@ -168,10 +168,11 @@ router.get('/sessions', async (req, res, next) => {
 
     const list = rows.map((s) => {
       const my = s.participants[0];
-      const myLabel =
-        my?.status === 'attended'
+      const myLabel = !my
+        ? '未在邀请名单'
+        : my.status === 'attended'
           ? '已参加'
-          : my?.status === 'absent'
+          : my.status === 'absent'
             ? '未参加'
             : '待确认';
       return mapSession(
@@ -180,7 +181,7 @@ router.get('/sessions', async (req, res, next) => {
           participant_count: s._count.participants,
           attended_count: 0,
           attendance_rate: 0,
-          my_status: my?.status || 'invited',
+          my_status: my?.status ?? 'none',
           my_status_label: myLabel,
         }
       );

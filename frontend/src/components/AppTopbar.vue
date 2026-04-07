@@ -186,6 +186,7 @@ async function onNotifClick(item) {
   const id = item.ref_id
   if (t === 'alert' && id) router.push(`/alerts/${id}`)
   else if ((t === 'plan' || item.type === 'plan') && id) router.push(`/plans/${id}`)
+  else if ((t === 'training' || item.type === 'training') && id) router.push(`/training/${id}`)
   notifOpen.value = false
 }
 

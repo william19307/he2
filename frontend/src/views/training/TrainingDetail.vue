@@ -63,7 +63,9 @@
         <a-form-item label="日期"><a-date-picker v-model="editForm.training_date" style="width:100%" value-format="YYYY-MM-DD" /></a-form-item>
         <a-form-item label="地点"><a-input v-model="editForm.location" /></a-form-item>
         <a-form-item label="说明"><a-textarea v-model="editForm.description" /></a-form-item>
+        <!-- 仅打开编辑弹窗时再挂载，避免校医/老师误请求 admin 租户接口触发「权限不足」 -->
         <TrainingAudiencePickers
+          v-if="editVisible"
           v-model:scope="editAudienceScope"
           v-model:tenant-ids="editAudienceTenantIds"
           v-model:counselor-ids="editAudienceCounselorIds"
@@ -82,6 +84,7 @@
         发布后将向选定范围的老师发送站内通知，且不可撤回。
       </a-alert>
       <TrainingAudiencePickers
+        v-if="publishVisible"
         v-model:scope="publishScope"
         v-model:tenant-ids="publishTenantIds"
         v-model:counselor-ids="publishCounselorIds"

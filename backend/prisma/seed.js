@@ -85,6 +85,7 @@ async function main() {
   await upsertUser('admin', '系统管理员', 'admin', '13800000000');
   await upsertUser('counselor001', '张心理', 'counselor', '13800000001');
   await upsertUser('teacher001', '李老师', 'teacher', '13800000002');
+  await upsertUser('doctor001', '王校医', 'doctor', '13800000003');
 
   for (let i = 1; i <= 10; i++) {
     const uname = `student${String(i).padStart(3, '0')}`;
@@ -111,7 +112,7 @@ async function main() {
       },
     });
   }
-  console.log('  ✓ 用户: admin、counselor001、teacher001、student001~010（upsert）');
+  console.log('  ✓ 用户: admin、counselor001、teacher001、doctor001、student001~010（upsert）');
 
   let cat1 = await prisma.scaleCategory.findFirst({ where: { name: '通用筛查类' } });
   if (!cat1) {
@@ -1160,6 +1161,7 @@ async function main() {
   console.log('\n🎉 播种完成\n');
   console.log('📋 联调账号（密码均为 123456，学校编码 demo_school）');
   console.log('   心理教师: counselor001');
+  console.log('   校医（培训联调）: doctor001');
   console.log('   学生+H5: student001（students 表已关联）');
   console.log(`   测评计划: ${LIANTIAO_PLAN_TITLE}（status=ongoing）`);
   console.log('   工作台: ≥1 红色 pending 预警（student002 / 【联调】红色预警演示）');
