@@ -86,6 +86,36 @@ const routes = [
         meta: { title: '学生档案' }
       },
       {
+        path: 'students/:id/print',
+        name: 'StudentPrint',
+        component: () => import('../views/students/StudentPrint.vue'),
+        meta: { title: '打印档案', desktopOnly: true }
+      },
+      {
+        path: 'training',
+        name: 'TrainingList',
+        component: () => import('../views/training/TrainingList.vue'),
+        meta: { title: '培训管理', desktopOnly: true }
+      },
+      {
+        path: 'training/my',
+        name: 'TrainingMy',
+        component: () => import('../views/training/TrainingMy.vue'),
+        meta: { title: '我的培训', desktopOnly: true }
+      },
+      {
+        path: 'training/:id',
+        name: 'TrainingDetail',
+        component: () => import('../views/training/TrainingDetail.vue'),
+        meta: { title: '培训详情', desktopOnly: true }
+      },
+      {
+        path: 'transfers/pending',
+        name: 'TransfersPending',
+        component: () => import('../views/transfers/TransfersPending.vue'),
+        meta: { title: '待认领学生', desktopOnly: true }
+      },
+      {
         path: 'scales',
         name: 'ScaleList',
         component: () => import('../views/scales/ScaleList.vue'),

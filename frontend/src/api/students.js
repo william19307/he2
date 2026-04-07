@@ -53,3 +53,26 @@ export function postStudentParentComm(userId, data) {
   return request.post(`/students/${userId}/parent-comms`, data)
 }
 
+export function getStudentPhysicals(userId) {
+  return request.get(`/students/${userId}/physicals`)
+}
+
+export function postStudentPhysical(userId, data) {
+  return request.post(`/students/${userId}/physicals`, data)
+}
+
+export function putStudentPhysical(userId, recordId, data) {
+  return request.put(`/students/${userId}/physicals/${recordId}`, data)
+}
+
+export function deleteStudentPhysical(userId, recordId) {
+  return request.delete(`/students/${userId}/physicals/${recordId}`)
+}
+
+export function postStudentTransfer(userId, data) {
+  return request.post(`/students/${userId}/transfer`, data)
+}
+
+export function getStudentTransferHistory(userId) {
+  return request.get(`/students/${userId}/transfer-history`)
+}

@@ -22,6 +22,8 @@ import reportRoutes from './routes/reports.js';
 import aiChatStaffRoutes from './routes/aiChatStaff.js';
 import caseRoutes from './routes/cases.js';
 import interventionRoutes from './routes/intervention.js';
+import trainingRoutes from './routes/training.js';
+import transferRoutes from './routes/transfers.js';
 import { injectTenant } from './middleware/tenant.js';
 import { authenticate, authorize } from './middleware/auth.js';
 import { alertFilterCounselorsHandler } from './routes/alertFilterRoutes.js';
@@ -83,6 +85,8 @@ app.use('/api/v1/reports', authenticate, injectTenant, reportRoutes);
 app.use('/api/v1/ai-chat', authenticate, injectTenant, authorize('counselor'), aiChatStaffRoutes);
 app.use('/api/v1/cases', authenticate, injectTenant, caseRoutes);
 app.use('/api/v1/intervention', authenticate, injectTenant, interventionRoutes);
+app.use('/api/v1/training', authenticate, injectTenant, trainingRoutes);
+app.use('/api/v1/transfers', authenticate, injectTenant, transferRoutes);
 
 // 静态文件：报告下载
 app.use('/uploads', express.static('uploads'));

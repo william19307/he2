@@ -4,6 +4,7 @@ import { authorize } from '../middleware/auth.js';
 import { success } from '../utils/response.js';
 import { NotFoundError, ValidationError } from '../utils/errors.js';
 import { toBeijingISO, endOfDayDate } from '../utils/datetime.js';
+import { computeBmi } from '../utils/physicalBmi.js';
 
 const router = Router();
 router.use(authorize('teacher'));
@@ -106,6 +107,290 @@ function dateKeyShanghai(d) {
   if (!d) return '';
   return new Date(d).toLocaleString('sv-SE', { timeZone: 'Asia/Shanghai' }).slice(0, 10);
 }
+
+function mapPhysicalRow(r) {
+  return {
+    id: Number(r.id),
+    record_date: r.recordDate ? new Date(r.recordDate).toISOString().slice(0, 10) : null,
+    height: num(r.height),
+    weight: num(r.weight),
+    bmi: num(r.bmi),
+    bmi_status: r.bmiStatus || null,
+    vision_left: num(r.visionLeft),
+    vision_right: num(r.visionRight),
+    note: r.note || '',
+    recorder_name: r.recorder?.realName || '',
+    created_at: toBeijingISO(r.createdAt),
+  };
+}
+
+/** GET /:id/physicals — 体测记录 */
+router.get('/:id/physicals', async (req, res, next) => {
+  try {
+    const tid = req.tenantId;
+    const st = await loadStudentByIdParam(tid, req.params.id);
+    if (!st) throw new NotFoundError('学生');
+    const rows = await prisma.studentPhysical.findMany({
+      where: { studentId: st.id, tenantId: tid },
+      orderBy: { recordDate: 'desc' },
+      include: { recorder: { select: { realName: true } } },
+    });
+    success(res, { list: rows.map(mapPhysicalRow) });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** POST /:id/physicals — 新增体测 */
+router.post('/:id/physicals', async (req, res, next) => {
+  try {
+    const tid = req.tenantId;
+    const st = await loadStudentByIdParam(tid, req.params.id);
+    if (!st) throw new NotFoundError('学生');
+    const b = req.body || {};
+    if (!b.record_date) throw new ValidationError('record_date 必填');
+    const { bmi, bmi_status } = computeBmi(b.height, b.weight);
+    const row = await prisma.studentPhysical.create({
+      data: {
+        tenantId: tid,
+        studentId: st.id,
+        recordDate: new Date(String(b.record_date)),
+        height: b.height != null ? String(b.height) : null,
+        weight: b.weight != null ? String(b.weight) : null,
+        bmi: bmi != null ? String(bmi) : null,
+        bmiStatus: bmi_status,
+        visionLeft: b.vision_left != null ? String(b.vision_left) : null,
+        visionRight: b.vision_right != null ? String(b.vision_right) : null,
+        note: b.note || null,
+        recorderId: BigInt(req.user.userId),
+      },
+      include: { recorder: { select: { realName: true } } },
+    });
+    success(res, mapPhysicalRow(row), '已保存');
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** PUT /:id/physicals/:recordId */
+router.put('/:id/physicals/:recordId', async (req, res, next) => {
+  try {
+    const tid = req.tenantId;
+    const st = await loadStudentByIdParam(tid, req.params.id);
+    if (!st) throw new NotFoundError('学生');
+    const rid = BigInt(req.params.recordId);
+    const exist = await prisma.studentPhysical.findFirst({
+      where: { id: rid, studentId: st.id, tenantId: tid },
+    });
+    if (!exist) throw new NotFoundError('体测记录');
+    const b = req.body || {};
+    const { bmi, bmi_status } = computeBmi(
+      b.height ?? num(exist.height),
+      b.weight ?? num(exist.weight)
+    );
+    const row = await prisma.studentPhysical.update({
+      where: { id: rid },
+      data: {
+        recordDate: b.record_date ? new Date(String(b.record_date)) : undefined,
+        height: b.height != null ? String(b.height) : undefined,
+        weight: b.weight != null ? String(b.weight) : undefined,
+        bmi: bmi != null ? String(bmi) : null,
+        bmiStatus: bmi_status,
+        visionLeft: b.vision_left != null ? String(b.vision_left) : undefined,
+        visionRight: b.vision_right != null ? String(b.vision_right) : undefined,
+        note: b.note !== undefined ? b.note : undefined,
+      },
+      include: { recorder: { select: { realName: true } } },
+    });
+    success(res, mapPhysicalRow(row), '已更新');
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** DELETE /:id/physicals/:recordId — counselor+ */
+router.delete(
+  '/:id/physicals/:recordId',
+  authorize('counselor'),
+  async (req, res, next) => {
+    try {
+      const tid = req.tenantId;
+      const st = await loadStudentByIdParam(tid, req.params.id);
+      if (!st) throw new NotFoundError('学生');
+      const rid = BigInt(req.params.recordId);
+      const r = await prisma.studentPhysical.deleteMany({
+        where: { id: rid, studentId: st.id, tenantId: tid },
+      });
+      if (!r.count) throw new NotFoundError('体测记录');
+      success(res, { ok: true }, '已删除');
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+/** GET /:id/transfer-history */
+router.get('/:id/transfer-history', async (req, res, next) => {
+  try {
+    const tid = req.tenantId;
+    const st = await loadStudentByIdParam(tid, req.params.id);
+    if (!st) throw new NotFoundError('学生');
+    const rows = await prisma.studentTransfer.findMany({
+      where: { studentId: st.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    const list = rows.map((t) => ({
+      id: Number(t.id),
+      transfer_type: t.transferType,
+      from_school_name: t.fromSchoolName,
+      to_school_name: t.toSchoolName,
+      status: t.status,
+      transfer_date: t.transferDate
+        ? new Date(t.transferDate).toISOString().slice(0, 10)
+        : null,
+      note: t.note,
+      created_at: toBeijingISO(t.createdAt),
+    }));
+    success(res, { list });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** POST /:id/transfer — 办理升学 */
+router.post('/:id/transfer', async (req, res, next) => {
+  try {
+    const tid = req.tenantId;
+    const st = await loadStudentByIdParam(tid, req.params.id);
+    if (!st) throw new NotFoundError('学生');
+    const body = req.body || {};
+    const transferType = body.transfer_type;
+    if (!transferType) throw new ValidationError('transfer_type 必填');
+    if (!body.transfer_date) throw new ValidationError('transfer_date 必填');
+    const transferDate = new Date(String(body.transfer_date));
+
+    const tenant = await prisma.tenant.findUnique({ where: { id: tid } });
+    const fromSchoolName = tenant?.name || '';
+    const fromCounselorId = st.caseFile?.counselorId ?? null;
+
+    if (transferType === 'same_school') {
+      if (body.new_class_id == null) throw new ValidationError('new_class_id 必填（本校升学）');
+      const newClassId = BigInt(body.new_class_id);
+      const cls = await prisma.class.findFirst({
+        where: { id: newClassId, tenantId: tid },
+      });
+      if (!cls) throw new ValidationError('目标班级无效');
+      await prisma.$transaction(async (tx) => {
+        await tx.student.update({
+          where: { id: st.id },
+          data: { classId: newClassId },
+        });
+        await tx.studentTransfer.create({
+          data: {
+            studentId: st.id,
+            transferType: 'same_school',
+            fromTenantId: tid,
+            fromSchoolName,
+            fromCounselorId,
+            toTenantId: tid,
+            newGrade: body.new_grade || null,
+            newClass: body.new_class || null,
+            transferDate,
+            status: 'claimed',
+            note: body.note || null,
+            operatorId: BigInt(req.user.userId),
+          },
+        });
+      });
+      return success(res, { ok: true }, '本校升学已办理');
+    }
+
+    if (transferType === 'cross_school') {
+      if (body.to_tenant_id == null) throw new ValidationError('to_tenant_id 必填');
+      if (body.new_class_id == null) throw new ValidationError('new_class_id 必填');
+      const toTenantId = BigInt(body.to_tenant_id);
+      const newClassId = BigInt(body.new_class_id);
+      const cls = await prisma.class.findFirst({
+        where: { id: newClassId, tenantId: toTenantId },
+      });
+      if (!cls) throw new ValidationError('目标班级不在目标学校');
+      const toCounselorId =
+        body.to_counselor_id != null ? BigInt(body.to_counselor_id) : null;
+
+      await prisma.$transaction(async (tx) => {
+        await tx.student.update({
+          where: { id: st.id },
+          data: {
+            tenantId: toTenantId,
+            classId: newClassId,
+            graduationStatus: 'enrolled',
+            transferStatus: null,
+            transferSchoolId: null,
+            transferSchoolName: null,
+          },
+        });
+        const cfUpdate = { tenantId: toTenantId };
+        if (toCounselorId != null) cfUpdate.counselorId = toCounselorId;
+        await tx.caseFile.updateMany({
+          where: { studentId: st.id },
+          data: cfUpdate,
+        });
+        const toTenant = await tx.tenant.findUnique({ where: { id: toTenantId } });
+        await tx.studentTransfer.create({
+          data: {
+            studentId: st.id,
+            transferType: 'cross_school',
+            fromTenantId: tid,
+            fromSchoolName,
+            fromCounselorId,
+            toTenantId,
+            toSchoolName: body.to_school_name || toTenant?.name || null,
+            toCounselorId,
+            transferDate,
+            status: 'claimed',
+            note: body.note || null,
+            operatorId: BigInt(req.user.userId),
+          },
+        });
+      });
+      return success(res, { ok: true }, '跨校迁移已完成');
+    }
+
+    if (transferType === 'other') {
+      const schoolName = body.to_school_name || body.school_name || '';
+      await prisma.$transaction(async (tx) => {
+        await tx.student.update({
+          where: { id: st.id },
+          data: {
+            graduationStatus: 'transferred',
+            transferStatus: 'pending',
+            transferSchoolName: schoolName || null,
+            transferDate,
+          },
+        });
+        await tx.studentTransfer.create({
+          data: {
+            studentId: st.id,
+            transferType: 'other',
+            fromTenantId: tid,
+            fromSchoolName,
+            toSchoolName: schoolName || null,
+            transferDate,
+            status: 'pending',
+            note: body.note || null,
+            operatorId: BigInt(req.user.userId),
+          },
+        });
+      });
+      return success(res, { ok: true }, '已提交待认领队列');
+    }
+
+    throw new ValidationError('transfer_type 无效');
+  } catch (e) {
+    next(e);
+  }
+});
 
 router.get('/:id/assessments', async (req, res, next) => {
   try {
@@ -504,6 +789,9 @@ router.get('/:id', async (req, res, next) => {
       total_assessments: totalAssess,
       total_alerts: totalAlerts,
       total_sessions: sessionCount,
+      graduation_status: st.graduationStatus || 'enrolled',
+      transfer_status: st.transferStatus || null,
+      transfer_school_name: st.transferSchoolName || null,
     });
   } catch (e) {
     next(e);

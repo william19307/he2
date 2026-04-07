@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import prisma from '../utils/prisma.js';
 import { authorize } from '../middleware/auth.js';
 import { success } from '../utils/response.js';
-import { ValidationError } from '../utils/errors.js';
+import { ValidationError, ForbiddenError } from '../utils/errors.js';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -240,6 +240,92 @@ router.post('/students/import', uploadSingleFile, async (req, res, next) => {
       imported_count: successN,
       failed_count: errors.length,
       failed_rows: errors,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** GET /classes-for-tenant?tenant_id= — 跨校升学选班级 */
+router.get('/classes-for-tenant', async (req, res, next) => {
+  try {
+    if (req.query.tenant_id == null) throw new ValidationError('tenant_id 必填');
+    const target = BigInt(req.query.tenant_id);
+    if (target !== req.tenantId && req.user.role !== 'super_admin') {
+      return next(new ForbiddenError('仅可查看本校班级，跨校需超级管理员'));
+    }
+    const rows = await prisma.class.findMany({
+      where: { tenantId: target },
+      include: { grade: { select: { name: true, level: true } } },
+      take: 500,
+      orderBy: [{ grade: { level: 'asc' } }, { classNum: 'asc' }],
+    });
+    success(res, {
+      list: rows.map((c) => ({
+        id: Number(c.id),
+        name: `${c.grade?.name || ''}${c.name}`,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** GET /counselors-for-tenant?tenant_id= — 跨校升学选老师 */
+router.get('/counselors-for-tenant', async (req, res, next) => {
+  try {
+    if (req.query.tenant_id == null) throw new ValidationError('tenant_id 必填');
+    const target = BigInt(req.query.tenant_id);
+    if (target !== req.tenantId && req.user.role !== 'super_admin') {
+      return next(new ForbiddenError('仅可查看本校老师，跨校需超级管理员'));
+    }
+    const rows = await prisma.user.findMany({
+      where: {
+        tenantId: target,
+        status: 1,
+        role: { in: ['counselor', 'teacher', 'doctor'] },
+      },
+      select: { id: true, realName: true, role: true },
+      take: 200,
+      orderBy: { id: 'asc' },
+    });
+    success(res, {
+      list: rows.map((u) => ({
+        id: Number(u.id),
+        real_name: u.realName,
+        role: u.role,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** GET /tenants — 跨校升学目标学校检索 */
+router.get('/tenants', async (req, res, next) => {
+  try {
+    const q = String(req.query.keyword || '').trim();
+    const where = { status: 1 };
+    if (q) {
+      where.OR = [
+        { name: { contains: q } },
+        { code: { contains: q } },
+      ];
+    }
+    const rows = await prisma.tenant.findMany({
+      where,
+      take: 50,
+      orderBy: { id: 'asc' },
+      select: { id: true, name: true, code: true, city: true, district: true },
+    });
+    success(res, {
+      list: rows.map((t) => ({
+        id: Number(t.id),
+        name: t.name,
+        code: t.code,
+        city: t.city,
+        district: t.district,
+      })),
     });
   } catch (err) {
     next(err);
