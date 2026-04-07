@@ -74,6 +74,14 @@
               全部学生
             </a>
             <a
+              v-if="isAdmin"
+              class="nav-child"
+              :class="{ 'nav-child--active': route.path === '/transfers/pending' }"
+              @click="go('/transfers/pending')"
+            >
+              待认领学生
+            </a>
+            <a
               class="nav-child"
               :class="{ 'nav-child--active': route.path === '/cases' || route.path.startsWith('/cases/') }"
               @click="go('/cases')"
@@ -278,11 +286,6 @@
           >
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/admin/users' }" @click="go('/admin/users')">用户列表</a>
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/admin/students/import' }" @click="go('/admin/students/import')">导入学生</a>
-            <a
-              class="nav-child"
-              :class="{ 'nav-child--active': route.path === '/transfers/pending' }"
-              @click="go('/transfers/pending')"
-            >待认领学生</a>
           </div>
         </div>
       </div>
@@ -353,7 +356,7 @@ function getDefaultOpenKeys() {
   const p = route.path
   const keys = []
   if (p.startsWith('/alerts')) keys.push('alerts')
-  if (p.startsWith('/students') || p.startsWith('/cases')) keys.push('students')
+  if (p.startsWith('/students') || p.startsWith('/cases') || p.startsWith('/transfers')) keys.push('students')
   if (p.startsWith('/plans') || p.startsWith('/scales')) keys.push('assessment')
   if (p.startsWith('/dashboard/class')) keys.push('analytics')
   if (p.startsWith('/consult')) keys.push('consult')
@@ -362,7 +365,6 @@ function getDefaultOpenKeys() {
   }
   if (p.startsWith('/admin')) keys.push('admin')
   if (p.startsWith('/training')) keys.push('training')
-  if (p.startsWith('/transfers')) keys.push('admin')
   return keys
 }
 
