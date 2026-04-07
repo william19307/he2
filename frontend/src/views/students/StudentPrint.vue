@@ -119,7 +119,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   getStudentProfile,
@@ -159,6 +159,24 @@ function doClose() {
   window.close()
 }
 
+/** 仅触发一次自动打印；打印结束或取消后关闭窗口（新窗口场景），避免重复弹窗 */
+let autoPrintScheduled = false
+function scheduleAutoPrintOnce() {
+  if (autoPrintScheduled) return
+  autoPrintScheduled = true
+  const run = () => {
+    setTimeout(() => {
+      window.print()
+      window.onafterprint = () => window.close()
+    }, 500)
+  }
+  if (document.readyState === 'complete') {
+    run()
+  } else {
+    window.onload = run
+  }
+}
+
 onMounted(async () => {
   try {
     const uid = id.value
@@ -176,8 +194,7 @@ onMounted(async () => {
     caseBlock.value = cs.data?.has_case ? cs.data.case : null
   } finally {
     loading.value = false
-    await nextTick()
-    setTimeout(() => window.print(), 400)
+    scheduleAutoPrintOnce()
   }
 })
 </script>

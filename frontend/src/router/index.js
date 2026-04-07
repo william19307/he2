@@ -33,6 +33,18 @@ const routes = [
     meta: { title: '角色选择', public: true }
   },
   {
+    path: '/students/:id/print',
+    component: () => import('../layouts/BlankLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'StudentPrint',
+        component: () => import('../views/students/StudentPrint.vue'),
+        meta: { title: '打印档案', desktopOnly: true },
+      },
+    ],
+  },
+  {
     path: '/',
     component: () => import('../layouts/MainLayout.vue'),
     redirect: '/dashboard',
@@ -84,12 +96,6 @@ const routes = [
         name: 'StudentDetail',
         component: () => import('../views/students/StudentDetail.vue'),
         meta: { title: '学生档案' }
-      },
-      {
-        path: 'students/:id/print',
-        name: 'StudentPrint',
-        component: () => import('../views/students/StudentPrint.vue'),
-        meta: { title: '打印档案', desktopOnly: true }
       },
       {
         path: 'training',
