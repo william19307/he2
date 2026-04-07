@@ -1,18 +1,10 @@
 <template>
   <div class="page-wrap">
-    <a-page-header title="培训管理" @back="$router.push('/dashboard')">
-      <template #extra>
-        <a-button type="primary" @click="openCreate">新建培训</a-button>
+    <a-page-header title="培训活动" @back="$router.push('/dashboard')">
+      <template v-if="isAdmin" #extra>
+        <a-button type="primary" @click="$router.push('/training/create')">新建培训</a-button>
       </template>
     </a-page-header>
-    <a-modal v-model:visible="createVisible" title="新建培训" @before-ok="submitCreate">
-      <a-form :model="createForm" layout="vertical">
-        <a-form-item label="标题" required><a-input v-model="createForm.title" /></a-form-item>
-        <a-form-item label="培训日期" required><a-date-picker v-model="createForm.training_date" style="width:100%" value-format="YYYY-MM-DD" /></a-form-item>
-        <a-form-item label="地点"><a-input v-model="createForm.location" /></a-form-item>
-        <a-form-item label="说明"><a-textarea v-model="createForm.description" /></a-form-item>
-      </a-form>
-    </a-modal>
     <a-radio-group v-model="tab" type="button" class="tabs" @change="onTabChange">
       <a-radio value="all">全部</a-radio>
       <a-radio value="ongoing">进行中</a-radio>
@@ -30,11 +22,14 @@
         <a-table-column title="标题" data-index="title" ellipsis />
         <a-table-column title="日期" data-index="training_date" :width="110" />
         <a-table-column title="地点" data-index="location" :width="120" ellipsis />
-        <a-table-column title="人数" :width="72">
+        <a-table-column v-if="isAdmin" title="人数" :width="72">
           <template #cell="{ record }">{{ record.participant_count }}</template>
         </a-table-column>
-        <a-table-column title="出席率" :width="80">
+        <a-table-column v-if="isAdmin" title="出席率" :width="80">
           <template #cell="{ record }">{{ record.attendance_rate }}%</template>
+        </a-table-column>
+        <a-table-column v-if="!isAdmin" title="我的状态" :width="100">
+          <template #cell="{ record }">{{ record.my_status_label || '—' }}</template>
         </a-table-column>
         <a-table-column title="状态" :width="90" data-index="status" />
         <a-table-column title="操作" :width="100">
@@ -48,41 +43,15 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { useRouter } from 'vue-router'
-import { getTrainingSessions, createTrainingSession } from '@/api/training'
+import { getTrainingSessions } from '@/api/training'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
-const createVisible = ref(false)
-const createForm = reactive({
-  title: '',
-  training_date: '',
-  location: '',
-  description: '',
-})
-
-function openCreate() {
-  Object.assign(createForm, { title: '', training_date: '', location: '', description: '' })
-  createVisible.value = true
-}
-
-async function submitCreate() {
-  if (!createForm.title || !createForm.training_date) {
-    Message.warning('请填写标题与日期')
-    return false
-  }
-  try {
-    const res = await createTrainingSession({ ...createForm })
-    const id = res.data?.id
-    createVisible.value = false
-    if (id) router.push(`/training/${id}`)
-    else load()
-    return true
-  } catch {
-    return false
-  }
-}
+const auth = useAuthStore()
+const isAdmin = computed(() => ['admin', 'super_admin'].includes(auth.userRole))
 
 const tab = ref('all')
 const list = ref([])
@@ -128,5 +97,7 @@ onMounted(load)
 </script>
 
 <style scoped>
-.tabs { margin-bottom: 16px; }
+.tabs {
+  margin-bottom: 16px;
+}
 </style>

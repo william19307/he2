@@ -98,22 +98,22 @@ const routes = [
         meta: { title: '学生档案' }
       },
       {
-        path: 'training',
-        name: 'TrainingList',
-        component: () => import('../views/training/TrainingList.vue'),
-        meta: { title: '培训管理', desktopOnly: true }
-      },
-      {
-        path: 'training/my',
-        name: 'TrainingMy',
-        component: () => import('../views/training/TrainingMy.vue'),
-        meta: { title: '我的培训', desktopOnly: true }
+        path: 'training/create',
+        name: 'TrainingCreate',
+        component: () => import('../views/training/TrainingCreate.vue'),
+        meta: { title: '发布培训', desktopOnly: true, requireAdmin: true },
       },
       {
         path: 'training/:id',
         name: 'TrainingDetail',
         component: () => import('../views/training/TrainingDetail.vue'),
-        meta: { title: '培训详情', desktopOnly: true }
+        meta: { title: '培训详情', desktopOnly: true },
+      },
+      {
+        path: 'training',
+        name: 'TrainingList',
+        component: () => import('../views/training/TrainingList.vue'),
+        meta: { title: '培训活动', desktopOnly: true },
       },
       {
         path: 'transfers/pending',
@@ -344,6 +344,17 @@ router.beforeEach((to, _from, next) => {
   const pcToken = localStorage.getItem('xq_token') || localStorage.getItem('access_token')
   if (!pcToken) {
     return next({ path: '/login', query: { redirect: to.fullPath } })
+  }
+  if (to.meta.requireAdmin) {
+    try {
+      const u = JSON.parse(localStorage.getItem('user_info') || 'null')
+      const role = u?.role || ''
+      if (!['admin', 'super_admin'].includes(role)) {
+        return next({ path: '/training' })
+      }
+    } catch {
+      return next({ path: '/training' })
+    }
   }
   next()
 })

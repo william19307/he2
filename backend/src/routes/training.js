@@ -12,6 +12,19 @@ function isAdminRole(role) {
   return role === 'admin' || role === 'super_admin';
 }
 
+function normalizeDraftIdsFromBody(b) {
+  const raw = b.target_counselor_ids ?? b.draft_target_counselor_ids;
+  if (raw === undefined) return undefined;
+  if (!Array.isArray(raw)) throw new ValidationError('老师 ID 列表须为数组');
+  return raw.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+}
+
+function jsonDraftIds(j) {
+  if (j == null) return [];
+  if (Array.isArray(j)) return j.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+  return [];
+}
+
 async function assertSessionAccess(req, sessionId) {
   const tid = req.tenantId;
   const sid = BigInt(sessionId);
@@ -32,8 +45,12 @@ async function assertSessionAccess(req, sessionId) {
 }
 
 function mapSession(s, extra = {}) {
-  const total = s.participants?.length ?? 0;
-  const attended = s.participants?.filter((p) => p.status === 'attended').length ?? 0;
+  const parts = s.participants || [];
+  const total = extra.participant_count != null ? extra.participant_count : parts.length;
+  const attended =
+    extra.participant_count != null
+      ? extra.attended_count ?? 0
+      : parts.filter((p) => p.status === 'attended').length;
   return {
     id: Number(s.id),
     title: s.title,
@@ -44,6 +61,7 @@ function mapSession(s, extra = {}) {
     location: s.location || '',
     status: s.status,
     target_scope: s.targetScope,
+    draft_target_counselor_ids: jsonDraftIds(s.draftTargetCounselorIds),
     organizer_id: Number(s.organizerId),
     organizer_name: s.organizer?.realName || '',
     participant_count: total,
@@ -53,7 +71,7 @@ function mapSession(s, extra = {}) {
   };
 }
 
-/** GET /my — 我的培训（counselor+） */
+/** GET /my — 我的培训（兼容旧端，与列表合并后仍保留） */
 router.get('/my', authorize('counselor'), async (req, res, next) => {
   try {
     const tid = req.tenantId;
@@ -82,16 +100,45 @@ router.get('/my', authorize('counselor'), async (req, res, next) => {
   }
 });
 
-/** GET /sessions — 培训列表（admin+） */
-router.get('/sessions', authorize('admin'), async (req, res, next) => {
+/** GET /sessions — admin：全部；老师/心理师：仅被邀请的培训 */
+router.get('/sessions', async (req, res, next) => {
   try {
     const tid = req.tenantId;
     const page = Math.max(1, Number(req.query.page) || 1);
     const pageSize = Math.min(50, Math.max(1, Number(req.query.page_size) || 20));
     const tab = String(req.query.tab || 'all');
-    const where = { tenantId: tid };
+
+    if (isAdminRole(req.user.role)) {
+      const where = { tenantId: tid };
+      if (tab === 'ongoing') where.status = 'published';
+      else if (tab === 'done') where.status = 'completed';
+      const [rows, total] = await Promise.all([
+        prisma.trainingSession.findMany({
+          where,
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          orderBy: { trainingDate: 'desc' },
+          include: {
+            organizer: { select: { realName: true } },
+            participants: { select: { status: true } },
+          },
+        }),
+        prisma.trainingSession.count({ where }),
+      ]);
+      const list = rows.map((s) => mapSession(s));
+      paginate(res, { list, total, page, pageSize });
+      return;
+    }
+
+    const uid = BigInt(req.user.userId);
+    const where = {
+      tenantId: tid,
+      status: { in: ['published', 'completed'] },
+      participants: { some: { counselorId: uid } },
+    };
     if (tab === 'ongoing') where.status = 'published';
     else if (tab === 'done') where.status = 'completed';
+
     const [rows, total] = await Promise.all([
       prisma.trainingSession.findMany({
         where,
@@ -100,12 +147,32 @@ router.get('/sessions', authorize('admin'), async (req, res, next) => {
         orderBy: { trainingDate: 'desc' },
         include: {
           organizer: { select: { realName: true } },
-          participants: { select: { status: true } },
+          _count: { select: { participants: true } },
+          participants: { where: { counselorId: uid }, select: { status: true } },
         },
       }),
       prisma.trainingSession.count({ where }),
     ]);
-    const list = rows.map((s) => mapSession(s));
+
+    const list = rows.map((s) => {
+      const my = s.participants[0];
+      const myLabel =
+        my?.status === 'attended'
+          ? '已参加'
+          : my?.status === 'absent'
+            ? '未参加'
+            : '待确认';
+      return mapSession(
+        { ...s, participants: [] },
+        {
+          participant_count: s._count.participants,
+          attended_count: 0,
+          attendance_rate: 0,
+          my_status: my?.status || 'invited',
+          my_status_label: myLabel,
+        }
+      );
+    });
     paginate(res, { list, total, page, pageSize });
   } catch (e) {
     next(e);
@@ -118,6 +185,9 @@ router.post('/sessions', authorize('admin'), async (req, res, next) => {
     const tid = req.tenantId;
     const b = req.body || {};
     if (!b.title || !b.training_date) throw new ValidationError('title、training_date 必填');
+    const scope = b.target_scope === 'selected' ? 'selected' : 'all';
+    let draftIds = normalizeDraftIdsFromBody(b);
+    if (draftIds === undefined) draftIds = [];
     const row = await prisma.trainingSession.create({
       data: {
         tenantId: tid,
@@ -127,7 +197,8 @@ router.post('/sessions', authorize('admin'), async (req, res, next) => {
         trainingDate: new Date(String(b.training_date)),
         location: b.location || null,
         status: 'draft',
-        targetScope: b.target_scope === 'selected' ? 'selected' : 'all',
+        targetScope: scope,
+        draftTargetCounselorIds: scope === 'selected' && draftIds.length ? draftIds : null,
       },
       include: { organizer: { select: { realName: true } }, participants: true },
     });
@@ -179,15 +250,27 @@ router.put('/sessions/:id', authorize('admin'), async (req, res, next) => {
     if (!exist) throw new NotFoundError('培训');
     if (exist.status !== 'draft') throw new ValidationError('仅草稿可编辑');
     const b = req.body || {};
+    let nextScope = exist.targetScope;
+    if (b.target_scope === 'selected' || b.target_scope === 'all') {
+      nextScope = b.target_scope === 'selected' ? 'selected' : 'all';
+    }
+    const data = {
+      title: b.title != null ? String(b.title).slice(0, 200) : undefined,
+      description: b.description !== undefined ? b.description : undefined,
+      trainingDate: b.training_date ? new Date(String(b.training_date)) : undefined,
+      location: b.location !== undefined ? b.location : undefined,
+      targetScope: b.target_scope === 'selected' || b.target_scope === 'all' ? nextScope : undefined,
+    };
+    if (b.target_counselor_ids !== undefined || b.draft_target_counselor_ids !== undefined) {
+      const draftIds = normalizeDraftIdsFromBody(b);
+      data.draftTargetCounselorIds =
+        nextScope === 'selected' ? (draftIds.length ? draftIds : null) : null;
+    } else if (b.target_scope === 'all') {
+      data.draftTargetCounselorIds = null;
+    }
     const row = await prisma.trainingSession.update({
       where: { id: sid },
-      data: {
-        title: b.title != null ? String(b.title).slice(0, 200) : undefined,
-        description: b.description !== undefined ? b.description : undefined,
-        trainingDate: b.training_date ? new Date(String(b.training_date)) : undefined,
-        location: b.location !== undefined ? b.location : undefined,
-        targetScope: b.target_scope === 'selected' ? 'selected' : b.target_scope === 'all' ? 'all' : undefined,
-      },
+      data,
       include: { organizer: { select: { realName: true } }, participants: true },
     });
     success(res, mapSession(row), '已保存');
@@ -196,8 +279,7 @@ router.put('/sessions/:id', authorize('admin'), async (req, res, next) => {
   }
 });
 
-/** POST /sessions/:id/publish */
-router.post('/sessions/:id/publish', authorize('admin'), async (req, res, next) => {
+async function runPublish(req, res, next) {
   try {
     const tid = req.tenantId;
     const sid = BigInt(req.params.id);
@@ -206,20 +288,48 @@ router.post('/sessions/:id/publish', authorize('admin'), async (req, res, next) 
     });
     if (!sess) throw new NotFoundError('培训');
     if (sess.status !== 'draft') throw new ValidationError('已发布或已完成');
-    const tenant = await prisma.tenant.findUnique({ where: { id: tid } });
-    const schoolName = tenant?.name || '';
 
-    const counselors = await prisma.user.findMany({
-      where: {
-        tenantId: tid,
-        status: 1,
-        role: { in: ['counselor', 'teacher'] },
-      },
-      select: { id: true },
-    });
+    const b = req.body || {};
+    const targetScope = b.target_scope === 'selected' ? 'selected' : 'all';
+    let counselorRows;
+
+    if (targetScope === 'all') {
+      counselorRows = await prisma.user.findMany({
+        where: {
+          tenantId: tid,
+          status: 1,
+          role: { in: ['counselor', 'teacher', 'doctor'] },
+        },
+        select: { id: true, tenantId: true },
+        include: { tenant: { select: { name: true } } },
+      });
+    } else {
+      const raw = b.target_counselors;
+      if (!Array.isArray(raw) || raw.length === 0) {
+        throw new ValidationError('定向发布时 target_counselors 必填');
+      }
+      const ids = [...new Set(raw.map((x) => BigInt(x)))];
+      counselorRows = await prisma.user.findMany({
+        where: {
+          id: { in: ids },
+          status: 1,
+          role: { in: ['counselor', 'teacher', 'doctor'] },
+        },
+        select: { id: true, tenantId: true },
+        include: { tenant: { select: { name: true } } },
+      });
+      if (counselorRows.length !== ids.length) {
+        throw new ValidationError('存在无效的老师或角色不允许参与培训通知');
+      }
+      if (req.user.role !== 'super_admin') {
+        const cross = counselorRows.some((u) => u.tenantId !== tid);
+        if (cross) throw new ForbiddenError('仅可向本校老师发送培训通知');
+      }
+    }
 
     await prisma.$transaction(async (tx) => {
-      for (const u of counselors) {
+      for (const u of counselorRows) {
+        const schoolName = u.tenant?.name || '';
         await tx.trainingParticipant.upsert({
           where: {
             sessionId_counselorId: { sessionId: sid, counselorId: u.id },
@@ -236,7 +346,7 @@ router.post('/sessions/:id/publish', authorize('admin'), async (req, res, next) 
       }
       const title = '培训通知';
       const content = `您有一场培训「${sess.title}」，时间 ${new Date(sess.trainingDate).toISOString().slice(0, 10)}${sess.location ? `，地点 ${sess.location}` : ''}。`;
-      for (const u of counselors) {
+      for (const u of counselorRows) {
         await tx.notification.create({
           data: {
             tenantId: tid,
@@ -251,7 +361,11 @@ router.post('/sessions/:id/publish', authorize('admin'), async (req, res, next) 
       }
       await tx.trainingSession.update({
         where: { id: sid },
-        data: { status: 'published' },
+        data: {
+          status: 'published',
+          targetScope,
+          draftTargetCounselorIds: null,
+        },
       });
     });
 
@@ -259,7 +373,13 @@ router.post('/sessions/:id/publish', authorize('admin'), async (req, res, next) 
   } catch (e) {
     next(e);
   }
-});
+}
+
+/** PUT /sessions/:id/publish — 定向/全员发布 */
+router.put('/sessions/:id/publish', authorize('admin'), runPublish);
+
+/** POST /sessions/:id/publish — 兼容旧客户端 */
+router.post('/sessions/:id/publish', authorize('admin'), runPublish);
 
 /** POST /sessions/:id/complete */
 router.post('/sessions/:id/complete', authorize('admin'), async (req, res, next) => {

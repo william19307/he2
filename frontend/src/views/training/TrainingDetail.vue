@@ -6,14 +6,14 @@
           v-if="session.status === 'draft'"
           type="primary"
           status="warning"
-          @click="onPublish"
+          @click="openPublish"
         >发布通知</a-button>
         <a-button
           v-if="session.status === 'published'"
           type="primary"
           @click="onComplete"
         >标记完成</a-button>
-        <a-button v-if="session.status === 'draft'" @click="editVisible = true">编辑</a-button>
+        <a-button v-if="session.status === 'draft'" @click="openEdit">编辑</a-button>
       </template>
     </a-page-header>
     <a-spin v-if="loading" />
@@ -22,6 +22,9 @@
         <p>日期：{{ session.training_date }} · 地点：{{ session.location || '—' }}</p>
         <p>状态：{{ session.status }} · 组织者：{{ session.organizer_name }}</p>
         <p v-if="session.description">{{ session.description }}</p>
+        <p v-if="session.status === 'draft'">
+          通知范围：{{ session.target_scope === 'selected' ? '指定学校与老师' : '本校全部老师' }}
+        </p>
       </a-card>
       <a-card title="参与人员" size="small">
         <div v-if="isAdmin && session.status !== 'completed'" class="toolbar">
@@ -54,13 +57,35 @@
       </a-card>
     </template>
 
-    <a-modal v-model:visible="editVisible" title="编辑培训（仅草稿）" @before-ok="submitEdit">
+    <a-modal v-model:visible="editVisible" title="编辑培训（仅草稿）" width="640px" @before-ok="submitEdit">
       <a-form :model="editForm" layout="vertical">
         <a-form-item label="标题"><a-input v-model="editForm.title" /></a-form-item>
         <a-form-item label="日期"><a-date-picker v-model="editForm.training_date" style="width:100%" value-format="YYYY-MM-DD" /></a-form-item>
         <a-form-item label="地点"><a-input v-model="editForm.location" /></a-form-item>
         <a-form-item label="说明"><a-textarea v-model="editForm.description" /></a-form-item>
+        <TrainingAudiencePickers
+          v-model:scope="editAudienceScope"
+          v-model:tenant-ids="editAudienceTenantIds"
+          v-model:counselor-ids="editAudienceCounselorIds"
+        />
       </a-form>
+    </a-modal>
+
+    <a-modal
+      v-model:visible="publishVisible"
+      title="发布培训通知"
+      width="640px"
+      :ok-loading="publishSubmitting"
+      @before-ok="submitPublish"
+    >
+      <a-alert type="warning" style="margin-bottom: 12px">
+        发布后将向选定范围的老师发送站内通知，且不可撤回。
+      </a-alert>
+      <TrainingAudiencePickers
+        v-model:scope="publishScope"
+        v-model:tenant-ids="publishTenantIds"
+        v-model:counselor-ids="publishCounselorIds"
+      />
     </a-modal>
   </div>
 </template>
@@ -68,7 +93,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { Message, Modal } from '@arco-design/web-vue'
+import { Message } from '@arco-design/web-vue'
 import { useAuthStore } from '@/stores/auth'
 import {
   getTrainingSessionDetail,
@@ -77,6 +102,7 @@ import {
   updateTrainingParticipants,
   updateTrainingSession,
 } from '@/api/training'
+import TrainingAudiencePickers from './TrainingAudiencePickers.vue'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -94,6 +120,15 @@ const editForm = reactive({
   location: '',
   description: '',
 })
+const editAudienceScope = ref('all')
+const editAudienceTenantIds = ref([])
+const editAudienceCounselorIds = ref([])
+
+const publishVisible = ref(false)
+const publishSubmitting = ref(false)
+const publishScope = ref('all')
+const publishTenantIds = ref([])
+const publishCounselorIds = ref([])
 
 function toggleSel(cid, checked) {
   const set = new Set(selectedIds.value)
@@ -102,18 +137,51 @@ function toggleSel(cid, checked) {
   selectedIds.value = [...set]
 }
 
+function syncEditFromSession(s) {
+  if (!s) return
+  Object.assign(editForm, {
+    title: s.title,
+    training_date: s.training_date,
+    location: s.location || '',
+    description: s.description || '',
+  })
+  editAudienceScope.value = s.target_scope === 'selected' ? 'selected' : 'all'
+  editAudienceCounselorIds.value = [...(s.draft_target_counselor_ids || [])]
+  editAudienceTenantIds.value = []
+}
+
 watch(
   () => session.value,
   (s) => {
-    if (!s) return
-    Object.assign(editForm, {
-      title: s.title,
-      training_date: s.training_date,
-      location: s.location || '',
-      description: s.description || '',
-    })
+    syncEditFromSession(s)
   }
 )
+
+function openEdit() {
+  syncEditFromSession(session.value)
+  if (
+    editAudienceScope.value === 'selected' &&
+    auth.userInfo?.tenantId &&
+    auth.userRole !== 'super_admin'
+  ) {
+    editAudienceTenantIds.value = [Number(auth.userInfo.tenantId)]
+  }
+  editVisible.value = true
+}
+
+function openPublish() {
+  const s = session.value
+  if (!s) return
+  publishScope.value = s.target_scope === 'selected' ? 'selected' : 'all'
+  publishCounselorIds.value = [...(s.draft_target_counselor_ids || [])]
+  publishTenantIds.value =
+    publishScope.value === 'selected' &&
+    auth.userInfo?.tenantId &&
+    auth.userRole !== 'super_admin'
+      ? [Number(auth.userInfo.tenantId)]
+      : []
+  publishVisible.value = true
+}
 
 async function load() {
   loading.value = true
@@ -130,16 +198,26 @@ async function load() {
   }
 }
 
-function onPublish() {
-  Modal.confirm({
-    title: '发布培训',
-    content: '发布后将向本校心理老师与班主任发送站内通知，且不可撤回。是否继续？',
-    onOk: async () => {
-      await publishTrainingSession(id.value)
-      Message.success('已发布')
-      load()
-    },
-  })
+async function submitPublish() {
+  if (publishScope.value === 'selected' && !publishCounselorIds.value.length) {
+    Message.warning('定向发布请至少选择一位老师')
+    return false
+  }
+  publishSubmitting.value = true
+  try {
+    await publishTrainingSession(id.value, {
+      target_scope: publishScope.value,
+      target_counselors:
+        publishScope.value === 'selected' ? publishCounselorIds.value : undefined,
+    })
+    Message.success('已发布')
+    load()
+    return true
+  } catch {
+    return false
+  } finally {
+    publishSubmitting.value = false
+  }
 }
 
 async function onComplete() {
@@ -162,7 +240,18 @@ async function batchMark(status) {
 
 async function submitEdit() {
   try {
-    await updateTrainingSession(id.value, { ...editForm })
+    if (editAudienceScope.value === 'selected') {
+      if (!editAudienceCounselorIds.value.length) {
+        Message.warning('定向通知请至少选择一位老师')
+        return false
+      }
+    }
+    await updateTrainingSession(id.value, {
+      ...editForm,
+      target_scope: editAudienceScope.value,
+      target_counselor_ids:
+        editAudienceScope.value === 'selected' ? editAudienceCounselorIds.value : [],
+    })
     Message.success('已保存')
     editVisible.value = false
     load()

@@ -80,14 +80,6 @@
             >
               个案管理
             </a>
-            <a
-              v-if="isCounselor"
-              class="nav-child"
-              :class="{ 'nav-child--active': route.path === '/training/my' }"
-              @click="go('/training/my')"
-            >
-              我的培训
-            </a>
           </div>
         </div>
       </div>
@@ -135,6 +127,46 @@
             class="nav-children"
           >
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/dashboard/class' }" @click="go('/dashboard/class')">班级看板</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 培训管理 -->
+      <div v-if="canSeeTraining" class="nav-group">
+        <div v-if="!appStore.sidebarCollapsed" class="nav-group-label">培训管理</div>
+
+        <div class="nav-item nav-item--parent" :class="{ 'nav-item--open': openKeys.includes('training') }">
+          <div class="nav-item-trigger" @click.stop="toggleGroup('training')">
+            <span class="nav-item-icon"><IconBook /></span>
+            <span v-if="!appStore.sidebarCollapsed" class="nav-item-text">培训管理</span>
+            <span v-if="!appStore.sidebarCollapsed" class="nav-chevron">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span v-if="appStore.sidebarCollapsed" class="nav-tooltip">培训管理</span>
+          </div>
+          <div
+            v-if="!appStore.sidebarCollapsed"
+            v-show="openKeys.includes('training')"
+            class="nav-children"
+          >
+            <a
+              class="nav-child"
+              :class="{
+                'nav-child--active':
+                  route.path === '/training' ||
+                  (route.path.startsWith('/training/') &&
+                    route.path !== '/training/create'),
+              }"
+              @click="go('/training')"
+            >培训活动</a>
+            <a
+              v-if="isAdmin"
+              class="nav-child"
+              :class="{ 'nav-child--active': route.path === '/training/create' }"
+              @click="go('/training/create')"
+            >发布培训</a>
           </div>
         </div>
       </div>
@@ -248,15 +280,6 @@
             <a class="nav-child" :class="{ 'nav-child--active': route.path === '/admin/students/import' }" @click="go('/admin/students/import')">导入学生</a>
             <a
               class="nav-child"
-              :class="{
-                'nav-child--active':
-                  route.path === '/training' ||
-                  (route.path.startsWith('/training/') && route.path !== '/training/my'),
-              }"
-              @click="go('/training')"
-            >培训管理</a>
-            <a
-              class="nav-child"
               :class="{ 'nav-child--active': route.path === '/transfers/pending' }"
               @click="go('/transfers/pending')"
             >待认领学生</a>
@@ -287,7 +310,7 @@ import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import {
   IconDashboard, IconExclamationCircle, IconUserGroup,
-  IconFile, IconBarChart, IconHeart, IconSettings, IconApps,
+  IconFile, IconBarChart, IconHeart, IconSettings, IconApps, IconBook,
 } from '@arco-design/web-vue/es/icon'
 
 const emit = defineEmits(['navigate'])
@@ -304,6 +327,10 @@ const ROLE_MAP = {
 const roleLabel = computed(() => ROLE_MAP[authStore.userRole] || '用户')
 const isAdmin = computed(() => ['admin', 'super_admin'].includes(authStore.userRole))
 const isCounselor = computed(() => ['counselor', 'doctor', 'admin', 'super_admin'].includes(authStore.userRole))
+/** 培训活动：心理老师、班主任、校医、管理员均可见入口 */
+const canSeeTraining = computed(() =>
+  ['counselor', 'teacher', 'doctor', 'admin', 'super_admin'].includes(authStore.userRole)
+)
 const avatarLetter = computed(() => (authStore.realName || '用')[0])
 
 /** 干预侧栏「个案管理」：/cases 列表页且非访谈 tab */
@@ -334,7 +361,7 @@ function getDefaultOpenKeys() {
     keys.push('intervention')
   }
   if (p.startsWith('/admin')) keys.push('admin')
-  if (p.startsWith('/training')) keys.push('students')
+  if (p.startsWith('/training')) keys.push('training')
   if (p.startsWith('/transfers')) keys.push('admin')
   return keys
 }
