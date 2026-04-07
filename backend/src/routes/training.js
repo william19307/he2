@@ -9,11 +9,38 @@ const router = Router();
 router.use(authorize('teacher'));
 
 function isAdminRole(role) {
-  return role === 'admin' || role === 'super_admin';
+  const r = String(role ?? '').trim().toLowerCase();
+  return r === 'admin' || r === 'super_admin';
+}
+
+function normalizeDraftIdsFromBody(b) {
+  const raw =
+    b.target_counselors ?? b.target_counselor_ids ?? b.draft_target_counselor_ids;
+  if (raw === undefined) return undefined;
+  if (!Array.isArray(raw)) throw new ValidationError('老师 ID 列表须为数组');
+  return raw.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+}
+
+function requireTenantId(req) {
+  const tid = req.tenantId;
+  if (tid == null) throw new ValidationError('租户信息缺失，请重新登录');
+  return tid;
+}
+
+function parseTrainingDate(s) {
+  const d = new Date(String(s));
+  if (Number.isNaN(d.getTime())) throw new ValidationError('training_date 无效，请使用 YYYY-MM-DD');
+  return d;
+}
+
+function jsonDraftIds(j) {
+  if (j == null) return [];
+  if (Array.isArray(j)) return j.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+  return [];
 }
 
 async function assertSessionAccess(req, sessionId) {
-  const tid = req.tenantId;
+  const tid = requireTenantId(req);
   const sid = BigInt(sessionId);
   const sess = await prisma.trainingSession.findFirst({
     where: { id: sid, tenantId: tid },
@@ -24,16 +51,19 @@ async function assertSessionAccess(req, sessionId) {
   });
   if (!sess) throw new NotFoundError('培训');
   if (isAdminRole(req.user.role)) return sess;
-  const uid = BigInt(req.user.userId);
   if (sess.status === 'draft') throw new ForbiddenError('无权查看草稿培训');
-  const isParticipant = sess.participants.some((p) => p.counselorId === uid);
-  if (!isParticipant) throw new ForbiddenError('无权查看');
-  return sess;
+  /** 已发布/已完成：本校老师端可查看详情，不要求已是 participants（培训信息视为公开） */
+  if (sess.status === 'published' || sess.status === 'completed') return sess;
+  throw new ForbiddenError('无权查看');
 }
 
 function mapSession(s, extra = {}) {
-  const total = s.participants?.length ?? 0;
-  const attended = s.participants?.filter((p) => p.status === 'attended').length ?? 0;
+  const parts = s.participants || [];
+  const total = extra.participant_count != null ? extra.participant_count : parts.length;
+  const attended =
+    extra.participant_count != null
+      ? extra.attended_count ?? 0
+      : parts.filter((p) => p.status === 'attended').length;
   return {
     id: Number(s.id),
     title: s.title,
@@ -44,6 +74,7 @@ function mapSession(s, extra = {}) {
     location: s.location || '',
     status: s.status,
     target_scope: s.targetScope,
+    draft_target_counselor_ids: jsonDraftIds(s.draftTargetCounselorIds),
     organizer_id: Number(s.organizerId),
     organizer_name: s.organizer?.realName || '',
     participant_count: total,
@@ -53,10 +84,10 @@ function mapSession(s, extra = {}) {
   };
 }
 
-/** GET /my — 我的培训（counselor+） */
+/** GET /my — 我的培训（兼容旧端，与列表合并后仍保留） */
 router.get('/my', authorize('counselor'), async (req, res, next) => {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const uid = BigInt(req.user.userId);
     const parts = await prisma.trainingParticipant.findMany({
       where: { counselorId: uid, tenantId: tid },
@@ -82,16 +113,44 @@ router.get('/my', authorize('counselor'), async (req, res, next) => {
   }
 });
 
-/** GET /sessions — 培训列表（admin+） */
-router.get('/sessions', authorize('admin'), async (req, res, next) => {
+/** GET /sessions — admin：全部；老师/心理师/校医：本校已发布与已完成的全部培训（含未邀请本人） */
+router.get('/sessions', async (req, res, next) => {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const page = Math.max(1, Number(req.query.page) || 1);
     const pageSize = Math.min(50, Math.max(1, Number(req.query.page_size) || 20));
     const tab = String(req.query.tab || 'all');
-    const where = { tenantId: tid };
+
+    if (isAdminRole(req.user.role)) {
+      const where = { tenantId: tid };
+      if (tab === 'ongoing') where.status = 'published';
+      else if (tab === 'done') where.status = 'completed';
+      const [rows, total] = await Promise.all([
+        prisma.trainingSession.findMany({
+          where,
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          orderBy: { trainingDate: 'desc' },
+          include: {
+            organizer: { select: { realName: true } },
+            participants: { select: { status: true } },
+          },
+        }),
+        prisma.trainingSession.count({ where }),
+      ]);
+      const list = rows.map((s) => mapSession(s));
+      paginate(res, { list, total, page, pageSize });
+      return;
+    }
+
+    const uid = BigInt(req.user.userId);
+    const where = {
+      tenantId: tid,
+      status: { in: ['published', 'completed'] },
+    };
     if (tab === 'ongoing') where.status = 'published';
     else if (tab === 'done') where.status = 'completed';
+
     const [rows, total] = await Promise.all([
       prisma.trainingSession.findMany({
         where,
@@ -100,34 +159,59 @@ router.get('/sessions', authorize('admin'), async (req, res, next) => {
         orderBy: { trainingDate: 'desc' },
         include: {
           organizer: { select: { realName: true } },
-          participants: { select: { status: true } },
+          _count: { select: { participants: true } },
+          participants: { where: { counselorId: uid }, select: { status: true } },
         },
       }),
       prisma.trainingSession.count({ where }),
     ]);
-    const list = rows.map((s) => mapSession(s));
+
+    const list = rows.map((s) => {
+      const my = s.participants[0];
+      const myLabel = !my
+        ? '未在邀请名单'
+        : my.status === 'attended'
+          ? '已参加'
+          : my.status === 'absent'
+            ? '未参加'
+            : '待确认';
+      return mapSession(
+        { ...s, participants: [] },
+        {
+          participant_count: s._count.participants,
+          attended_count: 0,
+          attendance_rate: 0,
+          my_status: my?.status ?? 'none',
+          my_status_label: myLabel,
+        }
+      );
+    });
     paginate(res, { list, total, page, pageSize });
   } catch (e) {
     next(e);
   }
 });
 
-/** POST /sessions */
+/** POST /sessions — 仅 admin / super_admin */
 router.post('/sessions', authorize('admin'), async (req, res, next) => {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const b = req.body || {};
     if (!b.title || !b.training_date) throw new ValidationError('title、training_date 必填');
+    const scope = b.target_scope === 'selected' ? 'selected' : 'all';
+    let draftIds = normalizeDraftIdsFromBody(b);
+    if (draftIds === undefined) draftIds = [];
     const row = await prisma.trainingSession.create({
       data: {
         tenantId: tid,
         title: String(b.title).slice(0, 200),
         description: b.description || null,
-        organizerId: BigInt(req.user.userId),
-        trainingDate: new Date(String(b.training_date)),
+        organizerId: BigInt(String(req.user.userId)),
+        trainingDate: parseTrainingDate(b.training_date),
         location: b.location || null,
         status: 'draft',
-        targetScope: b.target_scope === 'selected' ? 'selected' : 'all',
+        targetScope: scope,
+        draftTargetCounselorIds: scope === 'selected' && draftIds.length ? draftIds : null,
       },
       include: { organizer: { select: { realName: true } }, participants: true },
     });
@@ -171,7 +255,7 @@ router.get('/sessions/:id', async (req, res, next) => {
 /** PUT /sessions/:id */
 router.put('/sessions/:id', authorize('admin'), async (req, res, next) => {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const sid = BigInt(req.params.id);
     const exist = await prisma.trainingSession.findFirst({
       where: { id: sid, tenantId: tid },
@@ -179,15 +263,31 @@ router.put('/sessions/:id', authorize('admin'), async (req, res, next) => {
     if (!exist) throw new NotFoundError('培训');
     if (exist.status !== 'draft') throw new ValidationError('仅草稿可编辑');
     const b = req.body || {};
+    let nextScope = exist.targetScope;
+    if (b.target_scope === 'selected' || b.target_scope === 'all') {
+      nextScope = b.target_scope === 'selected' ? 'selected' : 'all';
+    }
+    const data = {
+      title: b.title != null ? String(b.title).slice(0, 200) : undefined,
+      description: b.description !== undefined ? b.description : undefined,
+      trainingDate: b.training_date ? parseTrainingDate(b.training_date) : undefined,
+      location: b.location !== undefined ? b.location : undefined,
+      targetScope: b.target_scope === 'selected' || b.target_scope === 'all' ? nextScope : undefined,
+    };
+    if (
+      b.target_counselors !== undefined ||
+      b.target_counselor_ids !== undefined ||
+      b.draft_target_counselor_ids !== undefined
+    ) {
+      const draftIds = normalizeDraftIdsFromBody(b);
+      data.draftTargetCounselorIds =
+        nextScope === 'selected' ? (draftIds.length ? draftIds : null) : null;
+    } else if (b.target_scope === 'all') {
+      data.draftTargetCounselorIds = null;
+    }
     const row = await prisma.trainingSession.update({
       where: { id: sid },
-      data: {
-        title: b.title != null ? String(b.title).slice(0, 200) : undefined,
-        description: b.description !== undefined ? b.description : undefined,
-        trainingDate: b.training_date ? new Date(String(b.training_date)) : undefined,
-        location: b.location !== undefined ? b.location : undefined,
-        targetScope: b.target_scope === 'selected' ? 'selected' : b.target_scope === 'all' ? 'all' : undefined,
-      },
+      data,
       include: { organizer: { select: { realName: true } }, participants: true },
     });
     success(res, mapSession(row), '已保存');
@@ -196,30 +296,63 @@ router.put('/sessions/:id', authorize('admin'), async (req, res, next) => {
   }
 });
 
-/** POST /sessions/:id/publish */
-router.post('/sessions/:id/publish', authorize('admin'), async (req, res, next) => {
+async function runPublish(req, res, next) {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const sid = BigInt(req.params.id);
     const sess = await prisma.trainingSession.findFirst({
       where: { id: sid, tenantId: tid },
     });
     if (!sess) throw new NotFoundError('培训');
     if (sess.status !== 'draft') throw new ValidationError('已发布或已完成');
-    const tenant = await prisma.tenant.findUnique({ where: { id: tid } });
-    const schoolName = tenant?.name || '';
 
-    const counselors = await prisma.user.findMany({
-      where: {
-        tenantId: tid,
-        status: 1,
-        role: { in: ['counselor', 'teacher'] },
-      },
-      select: { id: true },
-    });
+    const b = req.body || {};
+    const targetScope = b.target_scope === 'selected' ? 'selected' : 'all';
+    let counselorRows;
+
+    const counselorUserSelect = {
+      id: true,
+      tenantId: true,
+      tenant: { select: { name: true } },
+    };
+
+    if (targetScope === 'all') {
+      counselorRows = await prisma.user.findMany({
+        where: {
+          tenantId: tid,
+          status: 1,
+          role: { in: ['counselor', 'teacher', 'doctor'] },
+        },
+        select: counselorUserSelect,
+      });
+    } else {
+      let raw = b.target_counselors ?? b.target_counselor_ids;
+      if (!Array.isArray(raw) || raw.length === 0) {
+        raw = jsonDraftIds(sess.draftTargetCounselorIds);
+      }
+      if (!Array.isArray(raw) || raw.length === 0) {
+        throw new ValidationError(
+          '定向发布时请在 body 中提供 target_counselors，或在草稿中先保存定向老师列表'
+        );
+      }
+      const ids = [...new Set(raw.map((x) => BigInt(String(x))))];
+      counselorRows = await prisma.user.findMany({
+        where: {
+          id: { in: ids },
+          tenantId: tid,
+          status: 1,
+          role: { in: ['counselor', 'teacher', 'doctor'] },
+        },
+        select: counselorUserSelect,
+      });
+      if (counselorRows.length !== ids.length) {
+        throw new ValidationError('存在无效的老师、非本校账号或角色不允许参与培训通知');
+      }
+    }
 
     await prisma.$transaction(async (tx) => {
-      for (const u of counselors) {
+      for (const u of counselorRows) {
+        const schoolName = u.tenant?.name || '';
         await tx.trainingParticipant.upsert({
           where: {
             sessionId_counselorId: { sessionId: sid, counselorId: u.id },
@@ -236,7 +369,7 @@ router.post('/sessions/:id/publish', authorize('admin'), async (req, res, next) 
       }
       const title = '培训通知';
       const content = `您有一场培训「${sess.title}」，时间 ${new Date(sess.trainingDate).toISOString().slice(0, 10)}${sess.location ? `，地点 ${sess.location}` : ''}。`;
-      for (const u of counselors) {
+      for (const u of counselorRows) {
         await tx.notification.create({
           data: {
             tenantId: tid,
@@ -251,7 +384,11 @@ router.post('/sessions/:id/publish', authorize('admin'), async (req, res, next) 
       }
       await tx.trainingSession.update({
         where: { id: sid },
-        data: { status: 'published' },
+        data: {
+          status: 'published',
+          targetScope,
+          draftTargetCounselorIds: null,
+        },
       });
     });
 
@@ -259,12 +396,18 @@ router.post('/sessions/:id/publish', authorize('admin'), async (req, res, next) 
   } catch (e) {
     next(e);
   }
-});
+}
+
+/** PUT /sessions/:id/publish — 定向/全员发布 */
+router.put('/sessions/:id/publish', authorize('admin'), runPublish);
+
+/** POST /sessions/:id/publish — 兼容旧客户端 */
+router.post('/sessions/:id/publish', authorize('admin'), runPublish);
 
 /** POST /sessions/:id/complete */
 router.post('/sessions/:id/complete', authorize('admin'), async (req, res, next) => {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const sid = BigInt(req.params.id);
     const r = await prisma.trainingSession.updateMany({
       where: { id: sid, tenantId: tid, status: 'published' },
@@ -280,7 +423,7 @@ router.post('/sessions/:id/complete', authorize('admin'), async (req, res, next)
 /** PUT /sessions/:id/participants */
 router.put('/sessions/:id/participants', authorize('admin'), async (req, res, next) => {
   try {
-    const tid = req.tenantId;
+    const tid = requireTenantId(req);
     const sid = BigInt(req.params.id);
     const sess = await prisma.trainingSession.findFirst({
       where: { id: sid, tenantId: tid },

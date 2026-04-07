@@ -16,8 +16,8 @@ export function updateTrainingSession(id, data) {
   return request.put(`/training/sessions/${id}`, data)
 }
 
-export function publishTrainingSession(id) {
-  return request.post(`/training/sessions/${id}/publish`)
+export function publishTrainingSession(id, data) {
+  return request.put(`/training/sessions/${id}/publish`, data || {})
 }
 
 export function completeTrainingSession(id) {

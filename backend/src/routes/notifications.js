@@ -51,7 +51,14 @@ router.get('/', async (req, res, next) => {
       title: n.title,
       content: n.content || '',
       ref_id: n.refId != null ? Number(n.refId) : null,
-      ref_type: n.type === 'alert' ? 'alert' : n.type === 'task' ? 'task' : 'system',
+      ref_type:
+        n.type === 'alert'
+          ? 'alert'
+          : n.type === 'task'
+            ? 'task'
+            : n.type === 'training'
+              ? 'training'
+              : 'system',
       is_read: n.isRead,
       created_at: toISO(n.createdAt),
     }));

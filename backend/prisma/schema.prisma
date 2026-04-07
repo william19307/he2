@@ -713,6 +713,7 @@ model TrainingSession {
   location      String?  @db.VarChar(200)
   status        String   @default("draft") @db.VarChar(20)
   targetScope   String   @default("all") @map("target_scope") @db.VarChar(20)
+  draftTargetCounselorIds Json?  @map("draft_target_counselor_ids")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
 
