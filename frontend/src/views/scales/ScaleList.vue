@@ -26,6 +26,7 @@
             <a-option :value="1">小学</a-option>
             <a-option :value="2">初中</a-option>
             <a-option :value="3">高中</a-option>
+            <a-option :value="4">大学</a-option>
           </a-select>
           <a-input-search
             v-model="keyword"
@@ -134,13 +135,13 @@ const pagination = reactive({ current: 1, pageSize: 20, total: 0, showTotal: tru
 function applicableLevels(record) {
   const raw = record.applicableLevels ?? record.applicable_levels
   if (!Array.isArray(raw)) return []
-  return [...new Set(raw.map((x) => Number(x)).filter((n) => [1, 2, 3].includes(n)))].sort(
+  return [...new Set(raw.map((x) => Number(x)).filter((n) => [1, 2, 3, 4].includes(n)))].sort(
     (a, b) => a - b
   )
 }
 
 function levelLabel(lv) {
-  const m = { 1: '小学', 2: '初中', 3: '高中' }
+  const m = { 1: '小学', 2: '初中', 3: '高中', 4: '大学' }
   return m[lv] || ''
 }
 
@@ -328,6 +329,10 @@ watch(
 .level-pill--3 {
   background: #faf5ff;
   color: #7c3aed;
+}
+.level-pill--4 {
+  background: #fff7ed;
+  color: #c2410c;
 }
 .q-count {
   font-size: 12px;

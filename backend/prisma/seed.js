@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { applyCollegeScaleUpdates } from './seed-college-scales.js';
 
 const prisma = new PrismaClient();
 
@@ -144,7 +145,7 @@ async function main() {
         description: 'PHQ-9是一种简洁有效的抑郁症状筛查工具，包含9个条目。',
         instruction:
           '以下问题询问的是在过去两周内，您被以下问题困扰的频率。请根据实际情况选择最符合的选项。',
-        applicableLevels: [2, 3],
+        applicableLevels: [2, 3, 4],
         questionCount: 9,
         estimatedMins: 5,
         scoringType: 'total',
@@ -207,7 +208,7 @@ async function main() {
         shortName: 'GAD-7',
         description: 'GAD-7是广泛应用的焦虑症状筛查工具，包含7个条目。',
         instruction: '在过去两周内，您被以下问题困扰的频率是怎样的？',
-        applicableLevels: [2, 3],
+        applicableLevels: [2, 3, 4],
         questionCount: 7,
         estimatedMins: 3,
         scoringType: 'total',
@@ -1157,6 +1158,8 @@ async function main() {
     }
     console.log(`  ✓ 家长绑定: ${parentPhone} -> ${parentStu.user?.realName}（已验证）`);
   }
+
+  await applyCollegeScaleUpdates(prisma);
 
   console.log('\n🎉 播种完成\n');
   console.log('📋 联调账号（密码均为 123456，学校编码 demo_school）');

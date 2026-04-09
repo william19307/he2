@@ -10,6 +10,7 @@
     "db:push": "npx prisma db push",
     "db:migrate": "npx prisma migrate dev",
     "db:seed": "node prisma/seed.js",
+    "db:seed:college": "node prisma/run-college-updates-only.mjs",
     "db:studio": "npx prisma studio",
     "db:up": "docker compose -f docker-compose.mysql.yml up -d",
     "db:down": "docker compose -f docker-compose.mysql.yml down"

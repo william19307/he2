@@ -34,8 +34,8 @@ router.get('/categories', authorize('teacher'), async (_req, res, next) => {
   }
 });
 
-/** 学段：1 小学 2 初中 3 高中；与 applicable_levels JSON 数组一致 */
-const LEVEL_VALUES = [1, 2, 3];
+/** 学段：1 小学 2 初中 3 高中 4 大学；与 applicable_levels JSON 数组一致 */
+const LEVEL_VALUES = [1, 2, 3, 4];
 
 /**
  * 统计当前租户下，各量表出现在多少条测评计划（assessment_plans.scale_ids）中

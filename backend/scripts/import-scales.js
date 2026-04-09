@@ -215,6 +215,7 @@ function parseApplicableLevels(applicableText) {
   if (text.includes('小学')) levels.add(1);
   if (text.includes('初中')) levels.add(2);
   if (text.includes('高中')) levels.add(3);
+  if (text.includes('大学') || text.includes('高校') || text.includes('大学生')) levels.add(4);
 
   const range = text.match(/(\d+)\s*[-~—到]\s*(\d+)\s*岁/);
   if (range) {
