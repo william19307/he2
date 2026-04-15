@@ -24,6 +24,8 @@ import caseRoutes from './routes/cases.js';
 import interventionRoutes from './routes/intervention.js';
 import trainingRoutes from './routes/training.js';
 import transferRoutes from './routes/transfers.js';
+import formRecordRoutes from './routes/formRecords.js';
+import uploadRoutes from './routes/upload.js';
 import { injectTenant } from './middleware/tenant.js';
 import { authenticate, authorize } from './middleware/auth.js';
 import { alertFilterCounselorsHandler } from './routes/alertFilterRoutes.js';
@@ -87,6 +89,8 @@ app.use('/api/v1/cases', authenticate, injectTenant, caseRoutes);
 app.use('/api/v1/intervention', authenticate, injectTenant, interventionRoutes);
 app.use('/api/v1/training', authenticate, injectTenant, trainingRoutes);
 app.use('/api/v1/transfers', authenticate, injectTenant, transferRoutes);
+app.use('/api/v1/form-records', authenticate, injectTenant, formRecordRoutes);
+app.use('/api/v1/upload', authenticate, injectTenant, uploadRoutes);
 
 // 静态文件：报告下载
 app.use('/uploads', express.static('uploads'));

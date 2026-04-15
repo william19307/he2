@@ -211,6 +211,26 @@ const routes = [
         component: () => import('../views/admin/AdminImport.vue'),
         meta: { title: '批量导入学生', desktopOnly: true }
       },
+      {
+        path: 'resources',
+        component: () => import('../layouts/ResourcesLayout.vue'),
+        meta: { title: '资源下载', desktopOnly: true },
+        redirect: '/resources/forms',
+        children: [
+          {
+            path: 'forms',
+            name: 'ResourceForms',
+            component: () => import('../views/resources/FormList.vue'),
+            meta: { title: '工作表格', desktopOnly: true },
+          },
+          {
+            path: 'forms/:formType/records',
+            name: 'ResourceFormRecords',
+            component: () => import('../views/resources/FormRecordList.vue'),
+            meta: { title: '表格记录', desktopOnly: true },
+          },
+        ],
+      },
     ]
   },
   {

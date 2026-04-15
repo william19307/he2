@@ -139,6 +139,39 @@
         </div>
       </div>
 
+      <!-- 资源下载 -->
+      <div v-if="canSeeResources" class="nav-group">
+        <div v-if="!appStore.sidebarCollapsed" class="nav-group-label">资源下载</div>
+
+        <div class="nav-item nav-item--parent" :class="{ 'nav-item--open': openKeys.includes('resources') }">
+          <div class="nav-item-trigger" @click.stop="toggleGroup('resources')">
+            <span class="nav-item-icon"><IconFolder /></span>
+            <span v-if="!appStore.sidebarCollapsed" class="nav-item-text">资源下载</span>
+            <span v-if="!appStore.sidebarCollapsed" class="nav-chevron">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span v-if="appStore.sidebarCollapsed" class="nav-tooltip">资源下载</span>
+          </div>
+          <div
+            v-if="!appStore.sidebarCollapsed"
+            v-show="openKeys.includes('resources')"
+            class="nav-children"
+          >
+            <a
+              class="nav-child"
+              :class="{
+                'nav-child--active':
+                  route.path === '/resources/forms' ||
+                  route.path.startsWith('/resources/forms/'),
+              }"
+              @click="go('/resources/forms')"
+            >工作表格</a>
+          </div>
+        </div>
+      </div>
+
       <!-- 培训管理 -->
       <div v-if="canSeeTraining" class="nav-group">
         <div v-if="!appStore.sidebarCollapsed" class="nav-group-label">培训管理</div>
@@ -313,7 +346,7 @@ import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import {
   IconDashboard, IconExclamationCircle, IconUserGroup,
-  IconFile, IconBarChart, IconHeart, IconSettings, IconApps, IconBook,
+  IconFile, IconBarChart, IconHeart, IconSettings, IconApps, IconBook, IconFolder,
 } from '@arco-design/web-vue/es/icon'
 
 const emit = defineEmits(['navigate'])
@@ -332,6 +365,10 @@ const isAdmin = computed(() => ['admin', 'super_admin'].includes(authStore.userR
 const isCounselor = computed(() => ['counselor', 'doctor', 'admin', 'super_admin'].includes(authStore.userRole))
 /** 培训活动：心理老师、班主任、校医、管理员均可见入口 */
 const canSeeTraining = computed(() =>
+  ['counselor', 'teacher', 'doctor', 'admin', 'super_admin'].includes(authStore.userRole)
+)
+/** 资源下载（工作表格）：与培训入口角色一致 */
+const canSeeResources = computed(() =>
   ['counselor', 'teacher', 'doctor', 'admin', 'super_admin'].includes(authStore.userRole)
 )
 const avatarLetter = computed(() => (authStore.realName || '用')[0])
@@ -365,6 +402,7 @@ function getDefaultOpenKeys() {
   }
   if (p.startsWith('/admin')) keys.push('admin')
   if (p.startsWith('/training')) keys.push('training')
+  if (p.startsWith('/resources')) keys.push('resources')
   return keys
 }
 
