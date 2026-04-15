@@ -34,7 +34,10 @@ router.get('/categories', authorize('teacher'), async (_req, res, next) => {
   }
 });
 
-/** 学段：1 小学 2 初中 3 高中 4 大学；与 applicable_levels JSON 数组一致 */
+/**
+ * 学段筛选：query `level` 为整数，与 scales.applicable_levels（JSON 数字数组）一致。
+ * 1 小学 2 初中 3 高中 4 大学 — 非字符串枚举如 "university"。
+ */
 const LEVEL_VALUES = [1, 2, 3, 4];
 
 /**

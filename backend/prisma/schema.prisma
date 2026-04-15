@@ -44,6 +44,7 @@ model Tenant {
   studentPhysicals     StudentPhysical[]
   studentTransfersFrom StudentTransfer[] @relation("TransferFromTenant")
   studentTransfersTo   StudentTransfer[] @relation("TransferToTenant")
+  formRecords          FormRecord[]
 
   @@map("tenants")
 }
@@ -121,6 +122,7 @@ model User {
   trainingParticipations        TrainingParticipant[]
   physicalRecordsRecorded       StudentPhysical[] @relation("PhysicalRecorder")
   studentTransfersOperated      StudentTransfer[] @relation("TransferOperator")
+  formRecords                   FormRecord[]
 
   @@index([tenantId, role])
   @@map("users")
@@ -158,6 +160,7 @@ model Student {
   medicalReferrals     MedicalReferral[]
   physicals            StudentPhysical[]
   transfers            StudentTransfer[]
+  formRecords          FormRecord[]
 
   @@index([tenantId, classId])
   @@map("students")
@@ -771,4 +774,28 @@ model StudentTransfer {
   @@index([studentId])
   @@index([status])
   @@map("student_transfers")
+}
+
+// ==========================================
+// 资源下载 · 通用工作表格记录（A1/A3/A4/A10 等）
+// ==========================================
+
+model FormRecord {
+  id        BigInt   @id @default(autoincrement())
+  tenantId  BigInt   @map("tenant_id")
+  formType  String   @map("form_type") @db.VarChar(50)
+  studentId BigInt   @map("student_id")
+  filledBy  BigInt   @map("filled_by")
+  formData  Json     @map("form_data")
+  status    String   @default("draft") @map("status") @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+  filler  User    @relation(fields: [filledBy], references: [id])
+
+  @@index([tenantId, formType])
+  @@index([studentId, formType])
+  @@map("form_records")
 }
